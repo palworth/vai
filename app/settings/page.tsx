@@ -1,18 +1,40 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/app/hooks/useAuth'
+import { useSignOut } from '@/app/hooks/useSignOut'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useRouter } from 'next/navigation'
 
 export default function Settings() {
-  const [username, setUsername] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
+  const { user } = useAuth()
+  const { logout } = useSignOut()
+  const router = useRouter()
 
-  const handleLogout = () => {
-    // TODO: Implement actual logout functionality
-    console.log('Logout clicked')
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.displayName || '')
+      setEmail(user.email || '')
+    }
+  }, [user])
+
+  const handleLogout = async () => {
+    await logout()
+    router.push('/auth/login')
+  }
+
+  const handleSave = () => {
+    // TODO: Implement save functionality
+    console.log('Save changes:', { displayName, email })
+  }
+
+  if (!user) {
+    return <div>Loading...</div>
   }
 
   return (
@@ -31,12 +53,12 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="displayName">Display Name</Label>
                 <Input 
-                  id="username" 
-                  value={username} 
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your username"
+                  id="displayName" 
+                  value={displayName} 
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Enter your display name"
                 />
               </div>
               <div className="space-y-2">
@@ -47,12 +69,13 @@ export default function Settings() {
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
+                  disabled
                 />
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button variant="outline">Cancel</Button>
-              <Button>Save Changes</Button>
+              <Button variant="outline" onClick={() => router.push('/')}>Cancel</Button>
+              <Button onClick={handleSave}>Save Changes</Button>
             </CardFooter>
           </Card>
           <div className="mt-6">
