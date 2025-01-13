@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
-import { UpdateData } from 'firebase/firestore'
 
 interface Dog {
   id: string
@@ -22,6 +21,8 @@ interface Dog {
   weight: number
 }
 
+type DogUpdateData = Omit<Dog, 'id'>
+
 export default function DogPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [dog, setDog] = useState<Dog | null>(null)
@@ -31,13 +32,7 @@ export default function DogPage({ params }: { params: Promise<{ id: string }> })
   const router = useRouter()
   const { user } = useAuth()
 
-  useEffect(() => {
-    if (user) {
-      fetchDog()
-    }
-  }, [user])
-
-  const fetchDog = async () => {
+  const fetchDog = useCallback(async () => {
     if (!user) return
     const dogDoc = await getDoc(doc(db, 'dogs', id))
     if (dogDoc.exists()) {
@@ -45,22 +40,32 @@ export default function DogPage({ params }: { params: Promise<{ id: string }> })
     } else {
       router.push('/dogs')
     }
-  }
+  }, [user, id, router])
+
+  useEffect(() => {
+    if (user) {
+      fetchDog()
+    }
+  }, [user, fetchDog])
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!dog) return
+    
+    const updateData: DogUpdateData = {
+      name: dog.name,
+      breed: dog.breed,
+      age: dog.age,
+      sex: dog.sex,
+      weight: dog.weight
+    }
+
     try {
-      const updateData: { [key: string]: any } = {}
-      Object.keys(dog).forEach(key => {
-        if (key !== 'id') {
-          updateData[key] = dog[key as keyof Dog]
-        }
-      })
       await updateDoc(doc(db, 'dogs', dog.id), updateData)
       setIsEditing(false)
       showToast('Dog Updated', 'Your dog\'s information has been successfully updated.', false)
     } catch (error) {
+      console.error('Error updating dog:', error)
       showToast('Error', 'There was a problem updating your dog\'s information.', true)
     }
   }
@@ -71,6 +76,7 @@ export default function DogPage({ params }: { params: Promise<{ id: string }> })
       await deleteDoc(doc(db, 'dogs', dog.id))
       router.push('/dogs')
     } catch (error) {
+      console.error('Error deleting dog:', error)
       showToast('Error', 'There was a problem deleting your dog.', true)
     }
   }
