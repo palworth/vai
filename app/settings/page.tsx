@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 export default function Settings() {
-  const [username, setUsername] = useState('')
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
 
   const handleLogout = () => {
@@ -31,12 +31,12 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="name">Name</Label>
                 <Input 
-                  id="username" 
-                  value={username} 
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your username"
+                  id="name" 
+                  value={name} 
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter your name"
                 />
               </div>
               <div className="space-y-2">
