@@ -23,7 +23,7 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password)
       router.push('/')
-    } catch (error) {
+    } catch {
       setError('Failed to log in. Please check your email and password.')
     }
   }
@@ -32,7 +32,7 @@ export default function LoginPage() {
     try {
       await signIn()
       router.push('/')
-    } catch (error) {
+    } catch {
       setError('Failed to log in with Google. Please try again.')
     }
   }
