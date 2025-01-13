@@ -8,7 +8,7 @@ import { db } from '@/lib/firebase'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
 
@@ -38,6 +38,7 @@ export default function AddDogPage() {
       showToast('Dog Added', 'Your new dog has been successfully added.', false)
       setTimeout(() => router.push('/dogs'), 2000)
     } catch (error) {
+      console.error('Error adding dog:', error)
       showToast('Error', 'There was a problem adding your dog.', true)
     }
   }
@@ -59,7 +60,7 @@ export default function AddDogPage() {
           <Card>
             <CardHeader>
               <CardTitle>Add New Dog</CardTitle>
-              <CardDescription>Enter your dog's information below</CardDescription>
+              <CardDescription>Enter your dog&apos;s information below</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleAddDog} className="space-y-4">

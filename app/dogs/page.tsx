@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -21,19 +21,19 @@ export default function DogsPage() {
   const [dogs, setDogs] = useState<Dog[]>([])
   const { user } = useAuth()
 
-  useEffect(() => {
-    if (user) {
-      fetchDogs()
-    }
-  }, [user])
-
-  const fetchDogs = async () => {
+  const fetchDogs = useCallback(async () => {
     if (!user) return
     const dogsQuery = query(collection(db, 'dogs'), where('users', 'array-contains', user.uid))
     const querySnapshot = await getDocs(dogsQuery)
     const dogsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Dog))
     setDogs(dogsData)
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (user) {
+      fetchDogs()
+    }
+  }, [user, fetchDogs])
 
   return (
     <div className="min-h-screen bg-gray-100">

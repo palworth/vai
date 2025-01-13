@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,27 +23,17 @@ export default function Settings() {
   const [email, setEmail] = useState('')
   const [dogs, setDogs] = useState<Dog[]>([])
   const { user } = useAuth()
-  const router = useRouter()
   const { handleLogout, toastOpen, setToastOpen, toastMessage, showToast } = useLogout()
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/login')
-    } else {
-      fetchDogs()
-      fetchUserData()
-    }
-  }, [user, router])
-
-  const fetchDogs = async () => {
+  const fetchDogs = useCallback(async () => {
     if (!user) return
     const dogsQuery = query(collection(db, 'dogs'), where('users', 'array-contains', user.uid))
     const querySnapshot = await getDocs(dogsQuery)
     const dogsData = querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name, breed: doc.data().breed } as Dog))
     setDogs(dogsData)
-  }
+  }, [user])
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     if (!user) return
     const userDoc = await getDoc(doc(db, 'users', user.uid))
     if (userDoc.exists()) {
@@ -52,7 +41,14 @@ export default function Settings() {
       setName(userData.name || '')
       setEmail(userData.email || '')
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (user) {
+      fetchDogs()
+      fetchUserData()
+    }
+  }, [user, fetchDogs, fetchUserData])
 
   const handleSaveChanges = async () => {
     if (!user) return
@@ -60,6 +56,7 @@ export default function Settings() {
       await updateDoc(doc(db, 'users', user.uid), { name, email })
       showToast('Settings Updated', 'Your settings have been successfully updated.', false)
     } catch (error) {
+      console.error('Error updating settings:', error)
       showToast('Error', 'There was a problem updating your settings.', true)
     }
   }
