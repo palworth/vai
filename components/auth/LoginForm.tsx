@@ -11,16 +11,14 @@ import { useRouter } from 'next/navigation'
 export function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const { signIn, error, loading } = useSignIn()
+  const { signIn, error: signInError, loading } = useSignIn()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    try {
-      await signIn(email, password)
+    const success = await signIn(email, password)
+    if (success) {
       router.push('/')  // Redirect to home page after successful login
-    } catch (error) {
-      // Error handling is already managed by useSignIn hook
     }
   }
 
@@ -48,9 +46,9 @@ export function LoginForm() {
           required
         />
       </div>
-      {error && (
+      {signInError && (
         <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{signInError}</AlertDescription>
         </Alert>
       )}
       <Button type="submit" disabled={loading}>
