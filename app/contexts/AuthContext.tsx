@@ -2,9 +2,10 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import nookies from 'nookies';
 import { verifyAuthCookie } from '@/utils/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
@@ -24,6 +25,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Refresh the token on auth state change
         const token = await user.getIdToken();
         nookies.set(undefined, 'token', token, { path: '/' });
+
+        // Check if user document exists in Firestore, if not create one
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (!userDoc.exists()) {
+          await setDoc(userDocRef, {
+            name: user.displayName || '',
+            email: user.email || '',
+            // Add any other fields you want to store
+          });
+        }
       } else {
         setUser(null);
         nookies.set(undefined, 'token', '', { path: '/' });

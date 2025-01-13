@@ -42,9 +42,13 @@ export default function SettingsForm() {
 
   const handleSave = async () => {
     if (user) {
-      const userDocRef = doc(db, 'users', user.uid)
-      await updateDoc(userDocRef, { name })
-      console.log('Name updated successfully')
+      try {
+        const userDocRef = doc(db, 'users', user.uid)
+        await updateDoc(userDocRef, { name })
+        console.log('Name updated successfully')
+      } catch (error) {
+        console.error('Error updating name:', error)
+      }
     }
   }
 
@@ -74,7 +78,6 @@ export default function SettingsForm() {
             id="email" 
             type="email" 
             value={email} 
-            onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
             disabled
           />

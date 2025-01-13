@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import SignupForm from '@/components/auth/SignupForm'
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
 
 export default function SignupPage() {
   return (
@@ -12,6 +14,8 @@ export default function SignupPage() {
         </CardHeader>
         <CardContent>
           <SignupForm />
+          <Separator className="my-4" />
+          <GoogleSignInButton />
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-gray-600">
