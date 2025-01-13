@@ -40,7 +40,7 @@ export default function DietExercise() {
                 <CardTitle>Diet Tracker</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-500 mb-4">Track your dog's diet and meal information.</p>
+                <p className="text-sm text-gray-500 mb-4">Track your dog&apos;s diet and meal information.</p>
                 <Button onClick={() => setShowDietForm(true)}>Add Diet Entry</Button>
                 {showDietForm && (
                   <form onSubmit={handleDietSubmit} className="mt-4 space-y-4">
@@ -66,7 +66,7 @@ export default function DietExercise() {
                 <CardTitle>Exercise Tracker</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-500 mb-4">Log your dog's exercise and activity.</p>
+                <p className="text-sm text-gray-500 mb-4">Log your dog&apos;s exercise and activity.</p>
                 <Button onClick={() => setShowExerciseForm(true)}>Add Exercise Entry</Button>
                 {showExerciseForm && (
                   <form onSubmit={handleExerciseSubmit} className="mt-4 space-y-4">

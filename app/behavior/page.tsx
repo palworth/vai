@@ -32,7 +32,7 @@ export default function Behavior() {
               <CardTitle>Behavior Tracker</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500 mb-4">Log and track your dog's behavior patterns.</p>
+              <p className="text-sm text-gray-500 mb-4">Log and track your dog&apos;s behavior patterns.</p>
               <Button onClick={() => setShowBehaviorForm(true)}>Add Behavior Log</Button>
               {showBehaviorForm && (
                 <form onSubmit={handleBehaviorSubmit} className="mt-4 space-y-4">
