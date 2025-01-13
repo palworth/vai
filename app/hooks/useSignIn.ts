@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { setAuthCookie } from '@/utils/auth';
 
 export const useSignIn = () => {
   const [error, setError] = useState<string | null>(null);
@@ -10,11 +11,13 @@ export const useSignIn = () => {
     try {
       setError(null);
       setLoading(true);
-      await signInWithEmailAndPassword(auth, email, password);
-      return true;  // Return true on successful login
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // Set the authentication cookie after successful login
+      await setAuthCookie(userCredential.user);
+      return true;
     } catch (err) {
       setError((err as Error).message);
-      return false;  // Return false if login fails
+      return false;
     } finally {
       setLoading(false);
     }
