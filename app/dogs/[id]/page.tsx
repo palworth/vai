@@ -92,101 +92,92 @@ export default function DogPage({ params }: { params: Promise<{ id: string }> })
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-gray-100">
-        <header className="bg-white shadow">
-          <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-bold text-gray-900">{dog.name}</h1>
-          </div>
-        </header>
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>{isEditing ? 'Edit Dog Information' : 'Dog Information'}</CardTitle>
-              <CardDescription>{isEditing ? 'Update your dog\'s details below' : 'View your dog\'s details'}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isEditing ? (
-                <form onSubmit={handleUpdate} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input
-                      id="name"
-                      value={dog.name}
-                      onChange={(e) => setDog({ ...dog, name: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="breed">Breed</Label>
-                    <Input
-                      id="breed"
-                      value={dog.breed}
-                      onChange={(e) => setDog({ ...dog, breed: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="age">Age</Label>
-                    <Input
-                      id="age"
-                      type="number"
-                      value={dog.age}
-                      onChange={(e) => setDog({ ...dog, age: parseInt(e.target.value) })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sex">Sex</Label>
-                    <Select onValueChange={(value) => setDog({ ...dog, sex: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={dog.sex} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="weight">Weight (lbs)</Label>
-                    <Input
-                      id="weight"
-                      type="number"
-                      value={dog.weight}
-                      onChange={(e) => setDog({ ...dog, weight: parseFloat(e.target.value) })}
-                      required
-                    />
-                  </div>
-                  <Button type="submit">Update Dog</Button>
-                </form>
-              ) : (
-                <div className="space-y-2">
-                  <p><strong>Name:</strong> {dog.name}</p>
-                  <p><strong>Breed:</strong> {dog.breed}</p>
-                  <p><strong>Age:</strong> {dog.age}</p>
-                  <p><strong>Sex:</strong> {dog.sex}</p>
-                  <p><strong>Weight:</strong> {dog.weight} lbs</p>
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              {isEditing ? (
-                <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-              ) : (
-                <Button onClick={() => setIsEditing(true)}>Edit</Button>
-              )}
-              <Button variant="destructive" onClick={handleDelete}>Delete Dog</Button>
-            </CardFooter>
-          </Card>
-        </main>
-        <Toast open={toastOpen} onOpenChange={setToastOpen}>
-          <div className={`${toastMessage.isError ? 'bg-red-100 border-red-400' : 'bg-green-100 border-green-400'} border-l-4 p-4`}>
-            <ToastTitle className={`${toastMessage.isError ? 'text-red-800' : 'text-green-800'} font-bold`}>{toastMessage.title}</ToastTitle>
-            <ToastDescription className={`${toastMessage.isError ? 'text-red-700' : 'text-green-700'}`}>{toastMessage.description}</ToastDescription>
-          </div>
-        </Toast>
-        <ToastViewport />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>{isEditing ? 'Edit Dog Information' : 'Dog Information'}</CardTitle>
+          <CardDescription>{isEditing ? 'Update your dog\'s details below' : 'View your dog\'s details'}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isEditing ? (
+            <form onSubmit={handleUpdate} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={dog.name}
+                  onChange={(e) => setDog({ ...dog, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="breed">Breed</Label>
+                <Input
+                  id="breed"
+                  value={dog.breed}
+                  onChange={(e) => setDog({ ...dog, breed: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="age">Age</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  value={dog.age}
+                  onChange={(e) => setDog({ ...dog, age: parseInt(e.target.value) })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sex">Sex</Label>
+                <Select onValueChange={(value) => setDog({ ...dog, sex: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={dog.sex} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="weight">Weight (lbs)</Label>
+                <Input
+                  id="weight"
+                  type="number"
+                  value={dog.weight}
+                  onChange={(e) => setDog({ ...dog, weight: parseFloat(e.target.value) })}
+                  required
+                />
+              </div>
+              <Button type="submit">Update Dog</Button>
+            </form>
+          ) : (
+            <div className="space-y-2">
+              <p><strong>Name:</strong> {dog.name}</p>
+              <p><strong>Breed:</strong> {dog.breed}</p>
+              <p><strong>Age:</strong> {dog.age}</p>
+              <p><strong>Sex:</strong> {dog.sex}</p>
+              <p><strong>Weight:</strong> {dog.weight} lbs</p>
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          {isEditing ? (
+            <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+          ) : (
+            <Button onClick={() => setIsEditing(true)}>Edit</Button>
+          )}
+          <Button variant="destructive" onClick={handleDelete}>Delete Dog</Button>
+        </CardFooter>
+      </Card>
+      <Toast open={toastOpen} onOpenChange={setToastOpen}>
+        <div className={`${toastMessage.isError ? 'bg-red-100 border-red-400' : 'bg-green-100 border-green-400'} border-l-4 p-4`}>
+          <ToastTitle className={`${toastMessage.isError ? 'text-red-800' : 'text-green-800'} font-bold`}>{toastMessage.title}</ToastTitle>
+          <ToastDescription className={`${toastMessage.isError ? 'text-red-700' : 'text-green-700'}`}>{toastMessage.description}</ToastDescription>
+        </div>
+      </Toast>
+      <ToastViewport />
     </ToastProvider>
   )
 }
