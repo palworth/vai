@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import nookies from 'nookies';
+import { verifyAuthCookie } from '@/utils/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -16,10 +18,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUser(user);
+        // Refresh the token on auth state change
+        const token = await user.getIdToken();
+        nookies.set(undefined, 'token', token, { path: '/' });
+      } else {
+        setUser(null);
+        nookies.set(undefined, 'token', '', { path: '/' });
+      }
       setLoading(false);
     });
+
+    // Check for existing token on initial load
+    const cookies = nookies.get();
+    if (verifyAuthCookie(cookies)) {
+      // If a valid token exists, wait for onAuthStateChanged to set the user
+    } else {
+      setLoading(false);
+    }
 
     return () => unsubscribe();
   }, []);
@@ -31,5 +49,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
