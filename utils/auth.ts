@@ -14,7 +14,9 @@ export const setAuthCookie = async (user: User) => {
 
 // Function to verify the authentication cookie
 export const verifyAuthCookie = (cookies: { [key: string]: string }) => {
-  return cookies.token ? true : false;
+  const hasToken = !!cookies.token;
+  console.log('Verifying auth cookie, token exists:', hasToken);
+  return hasToken;
 };
 
 // Function to clear the authentication cookie

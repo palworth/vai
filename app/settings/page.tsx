@@ -7,8 +7,13 @@ export default async function SettingsPage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('token')
 
-  if (!token || !verifyAuthCookie({ token: token.value })) {
-    redirect('/auth/login')
+  try {
+    if (!token || !verifyAuthCookie({ token: token.value })) {
+      redirect('/auth/login')
+    }
+  } catch (error) {
+    console.error("Error verifying auth cookie:", error);
+    redirect('/auth/login'); // Redirect on error as well
   }
 
   return (

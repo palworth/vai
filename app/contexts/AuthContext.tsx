@@ -3,9 +3,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import nookies from 'nookies';
-import { verifyAuthCookie } from '@/utils/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   user: User | null;
@@ -17,15 +16,14 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
-        // Refresh the token on auth state change
-        const token = await user.getIdToken();
-        nookies.set(undefined, 'token', token, { path: '/' });
-
+        console.log('User authenticated:', user.uid);
+        
         // Check if user document exists in Firestore, if not create one
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
@@ -33,26 +31,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await setDoc(userDocRef, {
             name: user.displayName || '',
             email: user.email || '',
-            // Add any other fields you want to store
           });
         }
       } else {
         setUser(null);
-        nookies.set(undefined, 'token', '', { path: '/' });
+        console.log('No authenticated user');
+        router.push('/auth/login');
       }
       setLoading(false);
     });
 
-    // Check for existing token on initial load
-    const cookies = nookies.get();
-    if (verifyAuthCookie(cookies)) {
-      // If a valid token exists, wait for onAuthStateChanged to set the user
-    } else {
-      setLoading(false);
-    }
-
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   return (
     <AuthContext.Provider value={{ user, loading }}>

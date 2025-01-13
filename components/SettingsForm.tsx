@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/app/hooks/useAuth'
 import { useSignOut } from '@/app/hooks/useSignOut'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useRouter } from 'next/navigation'
@@ -24,16 +24,23 @@ export default function SettingsForm() {
       if (user) {
         setEmail(user.email || '')
         const userDocRef = doc(db, 'users', user.uid)
-        const userDoc = await getDoc(userDocRef)
-        if (userDoc.exists()) {
-          setName(userDoc.data().name || '')
+        try {
+          const userDoc = await getDoc(userDocRef)
+          if (userDoc.exists()) {
+            setName(userDoc.data().name || '')
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error)
         }
         setLoading(false)
+      } else if (!loading) {
+        // If user is null and we're not in the initial loading state, redirect to login
+        router.push('/auth/login')
       }
     }
 
     fetchUserData()
-  }, [user])
+  }, [user, loading, router])
 
   const handleLogout = async () => {
     await logout()
@@ -54,6 +61,10 @@ export default function SettingsForm() {
 
   if (loading) {
     return <div>Loading...</div>
+  }
+
+  if (!user) {
+    return null // The useEffect will handle redirection
   }
 
   return (

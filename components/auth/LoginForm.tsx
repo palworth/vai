@@ -15,12 +15,18 @@ export function LoginForm() {
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const success = await signIn(email, password)
-    if (success) {
-      router.push('/')  // Redirect to home page after successful login
+    e.preventDefault();
+    console.log('Attempting to sign in with email:', email);
+    try {
+      const success = await signIn(email, password);
+      if (success) {
+        console.log('Sign-in successful, redirecting to home');
+        router.push('/');  // Redirect to home page after successful login
+      }
+    } catch (err) {
+      console.error('Sign-in error:', err);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
