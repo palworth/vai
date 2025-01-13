@@ -1,6 +1,12 @@
 import Link from 'next/link'
 import { Settings } from 'lucide-react'
 
+/**
+ * Home Component
+ * 
+ * This is the main page of the VetAI application. It's protected by the AuthWrapper,
+ * so only authenticated users can access it.
+ */
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100">
