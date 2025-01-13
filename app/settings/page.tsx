@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,19 +10,59 @@ import { Label } from "@/components/ui/label"
 import { useAuth } from '../contexts/AuthContext'
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
 import { useLogout } from '../utils/auth'
+import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
+
+interface Dog {
+  id: string
+  name: string
+  breed: string
+}
 
 export default function Settings() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [dogs, setDogs] = useState<Dog[]>([])
   const { user } = useAuth()
   const router = useRouter()
-  const { handleLogout, toastOpen, setToastOpen, toastMessage } = useLogout()
+  const { handleLogout, toastOpen, setToastOpen, toastMessage, showToast } = useLogout()
 
   useEffect(() => {
     if (!user) {
       router.push('/login')
+    } else {
+      fetchDogs()
+      fetchUserData()
     }
   }, [user, router])
+
+  const fetchDogs = async () => {
+    if (!user) return
+    const dogsQuery = query(collection(db, 'dogs'), where('users', 'array-contains', user.uid))
+    const querySnapshot = await getDocs(dogsQuery)
+    const dogsData = querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name, breed: doc.data().breed } as Dog))
+    setDogs(dogsData)
+  }
+
+  const fetchUserData = async () => {
+    if (!user) return
+    const userDoc = await getDoc(doc(db, 'users', user.uid))
+    if (userDoc.exists()) {
+      const userData = userDoc.data()
+      setName(userData.name || '')
+      setEmail(userData.email || '')
+    }
+  }
+
+  const handleSaveChanges = async () => {
+    if (!user) return
+    try {
+      await updateDoc(doc(db, 'users', user.uid), { name, email })
+      showToast('Settings Updated', 'Your settings have been successfully updated.', false)
+    } catch (error) {
+      showToast('Error', 'There was a problem updating your settings.', true)
+    }
+  }
 
   if (!user) {
     return null
@@ -65,9 +106,33 @@ export default function Settings() {
               </CardContent>
               <CardFooter className="flex justify-between">
                 <Button variant="outline">Cancel</Button>
-                <Button>Save Changes</Button>
+                <Button onClick={handleSaveChanges}>Save Changes</Button>
               </CardFooter>
             </Card>
+
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Manage My Dogs</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+                  {dogs.map((dog) => (
+                    <Link href={`/dogs/${dog.id}`} key={dog.id}>
+                      <Card className="hover:shadow-md transition-shadow">
+                        <CardHeader className="p-4">
+                          <CardTitle className="text-lg">{dog.name}</CardTitle>
+                          <CardDescription>{dog.breed}</CardDescription>
+                        </CardHeader>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+                <Link href="/dogs" className="inline-block">
+                  <Button>View All Dogs</Button>
+                </Link>
+              </CardContent>
+            </Card>
+
             <div className="mt-6">
               <Button variant="destructive" onClick={handleLogout}>Logout</Button>
             </div>
