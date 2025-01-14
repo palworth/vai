@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { addDoc, collection, doc, updateDoc, Timestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { Button } from "@/components/ui/button"
@@ -36,13 +36,13 @@ export function BehaviorEventForm({ dogId, event, onSuccess, onCancel }: Behavio
   const [isCustomBehavior, setIsCustomBehavior] = useState(false)
   const [customBehaviorType, setCustomBehaviorType] = useState('')
 
-  const behaviorTypes = [
+  const behaviorTypes = useMemo(() => [
     "Excessive Barking",
     "Chewing",
     "Anxiety Attack",
     "Aggression",
     "Disobedience"
-  ]
+  ], [])
 
   useEffect(() => {
     if (event) {
@@ -56,7 +56,7 @@ export function BehaviorEventForm({ dogId, event, onSuccess, onCancel }: Behavio
       setIsCustomBehavior(isCustom);
       setCustomBehaviorType(isCustom ? event.behaviorType : '');
     }
-  }, [event])
+  }, [event, behaviorTypes])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

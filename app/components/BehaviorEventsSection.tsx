@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { format } from 'date-fns'
 import { BehaviorEventForm } from '@/app/components/BehaviorEventForm'
 
@@ -64,7 +64,7 @@ export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectio
     <Card>
       <CardHeader>
         <CardTitle>Behavior Events</CardTitle>
-        <CardDescription>Manage your dog's behavior events</CardDescription>
+        <CardDescription>Manage your dog&apos;s behavior events</CardDescription>
       </CardHeader>
       <CardContent>
         <Button onClick={() => {

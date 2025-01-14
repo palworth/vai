@@ -11,7 +11,6 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
 import { format } from 'date-fns'
 import { BehaviorEventForm } from '@/app/components/BehaviorEventForm'
-import { DocumentReference, Timestamp } from 'firebase/firestore'
 
 interface BehaviorEvent {
   id: string
@@ -28,28 +27,58 @@ export default function BehaviorPage() {
   const [editingEvent, setEditingEvent] = useState<BehaviorEvent | null>(null)
   const [toastOpen, setToastOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState({ title: '', description: '', isError: false })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const { user } = useAuth()
 
   useEffect(() => {
     const fetchBehaviorEvents = async () => {
-      if (!user) return
-      const eventsQuery = query(collection(db, 'behaviorEvents'), where('dogId', '!=', null))
-      const querySnapshot = await getDocs(eventsQuery)
-      const eventsData = await Promise.all(querySnapshot.docs.map(async (doc) => {
-        const eventData = doc.data()
-        const dogDoc = await getDoc(eventData.dogId as DocumentReference)
-        const dogData = dogDoc.data()
-        const dogName = dogDoc.exists() && dogData && 'name' in dogData ? dogData.name : 'Unknown Dog'
-        return {
-          id: doc.id,
-          ...eventData,
-          dogName,
-          dateTime: (eventData.dateTime as Timestamp).toDate(),
-          dogId: (eventData.dogId as DocumentReference).id
-        } as BehaviorEvent
-      }))
-      setBehaviorEvents(eventsData)
+      try {
+        setLoading(true)
+        setError(null)
+        if (!user) return
+        console.log('User:', user?.uid);
+        // First, fetch the user's dogs
+        const dogsQuery = query(collection(db, 'dogs'), where('users', 'array-contains', user.uid))
+        const dogsSnapshot = await getDocs(dogsQuery)
+        const userDogIds = dogsSnapshot.docs.map(doc => doc.id)
+        console.log('User dogs:', userDogIds);
+
+        // Then, fetch behavior events for these dogs
+        const eventsQuery = query(collection(db, 'behaviorEvents'), where('dogId', 'in', userDogIds.map(id => doc(db, 'dogs', id))))
+        const querySnapshot = await getDocs(eventsQuery)
+        const eventsData = querySnapshot.docs.map(doc => {
+          const eventData = doc.data()
+          return {
+            id: doc.id,
+            ...eventData,
+            dogName: 'Unknown Dog', // We'll update this later
+            dateTime: eventData.dateTime.toDate(),
+            dogId: eventData.dogId.id
+          } as BehaviorEvent
+        })
+
+        // Now, let's fetch the dog names
+        const dogNames = await Promise.all(userDogIds.map(async (dogId) => {
+          const dogDoc = await getDoc(doc(db, 'dogs', dogId))
+          return { id: dogId, name: dogDoc.data()?.name || 'Unknown Dog' }
+        }))
+
+        // Update the events with the correct dog names
+        const eventsWithDogNames = eventsData.map(event => ({
+          ...event,
+          dogName: dogNames.find(dog => dog.id === event.dogId)?.name || 'Unknown Dog'
+        }))
+
+        console.log('Fetched behavior events:', eventsWithDogNames)
+        setBehaviorEvents(eventsWithDogNames)
+        setLoading(false)
+      } catch (err) {
+        console.error('Error fetching behavior events:', err)
+        setError('Failed to fetch behavior events')
+        setLoading(false)
+      }
     }
 
     fetchBehaviorEvents()
@@ -85,6 +114,11 @@ export default function BehaviorPage() {
           </Link>
         </div>
 
+        {loading && <p>Loading behavior events...</p>}
+        {error && <p className="text-red-500">{error}</p>}
+        {!loading && !error && behaviorEvents.length === 0 && (
+          <p>No behavior events found. Add some events to get started!</p>
+        )}
         {behaviorEvents.map((event) => (
           <Card key={event.id}>
             <CardHeader>

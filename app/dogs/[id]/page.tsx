@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { doc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/app/contexts/AuthContext'
 import { Button } from "@/components/ui/button"
@@ -11,9 +11,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
-import { format } from 'date-fns'
-import { HealthEventForm } from '@/app/components/HealthEventForm'
-import { BehaviorEventForm } from '@/app/components/BehaviorEventForm'
 import { HealthEventsSection } from '@/app/components/HealthEventsSection'
 import { BehaviorEventsSection } from '@/app/components/BehaviorEventsSection'
 
@@ -26,23 +23,6 @@ interface Dog {
   weight: number
 }
 
-interface HealthEvent {
-  id: string
-  dogId: string
-  eventType: string
-  eventDate: Date
-  notes: string
-  severity?: 'mild' | 'moderate' | 'severe'
-}
-
-interface BehaviorEvent {
-  id: string
-  dogId: string
-  dateTime: Date
-  behaviorType: string
-  severityLevel: 'mild' | 'moderate' | 'severe'
-  notes: string
-}
 
 type DogUpdateData = Omit<Dog, 'id'>
 
