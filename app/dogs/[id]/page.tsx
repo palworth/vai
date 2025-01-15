@@ -14,6 +14,7 @@ import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } fro
 import { HealthEventsSection } from '@/app/components/HealthEventsSection'
 import { BehaviorEventsSection } from '@/app/components/BehaviorEventsSection'
 import { DietEventsSection } from '@/app/components/DietEventsSection'
+import { ExerciseEventsSection } from '@/app/components/ExerciseEventsSection'
 
 interface Dog {
   id: string
@@ -195,6 +196,7 @@ export default function DogPage() {
     <HealthEventsSection dogId={dog.id} showToast={showToast} />
     <BehaviorEventsSection dogId={dog.id} showToast={showToast} />
     <DietEventsSection dogId={dog.id} showToast={showToast} />
+    <ExerciseEventsSection dogId={dog.id} showToast={showToast} />
 
   </div>
 
@@ -209,3 +211,4 @@ export default function DogPage() {
 
       )
 }
+
