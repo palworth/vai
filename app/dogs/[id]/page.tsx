@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
 import { HealthEventsSection } from '@/app/components/HealthEventsSection'
 import { BehaviorEventsSection } from '@/app/components/BehaviorEventsSection'
+import { DietEventsSection } from '@/app/components/DietEventsSection'
 
 interface Dog {
   id: string
@@ -22,7 +23,6 @@ interface Dog {
   sex: string
   weight: number
 }
-
 
 type DogUpdateData = Omit<Dog, 'id'>
 
@@ -46,7 +46,6 @@ export default function DogPage() {
       router.push('/dogs')
     }
   }, [user, id, router])
-
 
   useEffect(() => {
     if (user) {
@@ -111,102 +110,102 @@ export default function DogPage() {
     return <div>Loading...</div>
   }
 
-  return (
-    <ToastProvider>
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{isEditing ? 'Edit Dog Information' : 'Dog Information'}</CardTitle>
-            <CardDescription>{isEditing ? 'Update your dog\'s details below' : 'View your dog\'s details'}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isEditing ? (
-              <form onSubmit={handleUpdate} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={dog.name}
-                    onChange={(e) => setDog({ ...dog, name: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="breed">Breed</Label>
-                  <Input
-                    id="breed"
-                    value={dog.breed}
-                    onChange={(e) => setDog({ ...dog, breed: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="age">Age</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    value={dog.age}
-                    onChange={(e) => setDog({ ...dog, age: parseInt(e.target.value) })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sex">Sex</Label>
-                  <Select onValueChange={(value) => setDog({ ...dog, sex: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={dog.sex} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="weight">Weight (lbs)</Label>
-                  <Input
-                    id="weight"
-                    type="number"
-                    value={dog.weight}
-                    onChange={(e) => setDog({ ...dog, weight: parseFloat(e.target.value) })}
-                    required
-                  />
-                </div>
-                <Button type="submit">Update Dog</Button>
-              </form>
-            ) : (
-              <div className="space-y-2">
-                <p><strong>Name:</strong> {dog.name}</p>
-                <p><strong>Breed:</strong> {dog.breed}</p>
-                <p><strong>Age:</strong> {dog.age}</p>
-                <p><strong>Sex:</strong> {dog.sex}</p>
-                <p><strong>Weight:</strong> {dog.weight} lbs</p>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            {isEditing ? (
-              <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-            ) : (
-              <Button onClick={() => setIsEditing(true)}>Edit</Button>
-            )}
-            <Button variant="destructive" onClick={handleDelete}>Delete Dog</Button>
-          </CardFooter>
-        </Card>
+  return (<ToastProvider>
+  <div className="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle>{isEditing ? 'Edit Dog Information' : 'Dog Information'}</CardTitle>
+        <CardDescription>{isEditing ? 'Update your dog\'s details below' : 'View your dog\'s details'}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isEditing ? (
+          <form onSubmit={handleUpdate} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={dog.name}
+                onChange={(e) => setDog({ ...dog, name: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="breed">Breed</Label>
+              <Input
+                id="breed"
+                value={dog.breed}
+                onChange={(e) => setDog({ ...dog, breed: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="age">Age</Label>
+              <Input
+                id="age"
+                type="number"
+                value={dog.age}
+                onChange={(e) => setDog({ ...dog, age: parseInt(e.target.value) })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sex">Sex</Label>
+              <Select onValueChange={(value) => setDog({ ...dog, sex: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder={dog.sex} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="weight">Weight (lbs)</Label>
+              <Input
+                id="weight"
+                type="number"
+                value={dog.weight}
+                onChange={(e) => setDog({ ...dog, weight: parseFloat(e.target.value) })}
+                required
+              />
+            </div>
+            <Button type="submit">Update Dog</Button>
+          </form>
+        ) : (
+          <div className="space-y-2">
+            <p><strong>Name:</strong> {dog.name}</p>
+            <p><strong>Breed:</strong> {dog.breed}</p>
+            <p><strong>Age:</strong> {dog.age}</p>
+            <p><strong>Sex:</strong> {dog.sex}</p>
+            <p><strong>Weight:</strong> {dog.weight} lbs</p>
+          </div>
+        )}
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        {isEditing ? (
+          <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+        ) : (
+          <Button onClick={() => setIsEditing(true)}>Edit</Button>
+        )}
+        <Button variant="destructive" onClick={handleDelete}>Delete Dog</Button>
+      </CardFooter>
+    </Card>
 
-        <HealthEventsSection dogId={dog.id} showToast={showToast} />
-        <BehaviorEventsSection dogId={dog.id} showToast={showToast} />
+    <HealthEventsSection dogId={dog.id} showToast={showToast} />
+    <BehaviorEventsSection dogId={dog.id} showToast={showToast} />
+    <DietEventsSection dogId={dog.id} showToast={showToast} />
 
-      </div>
+  </div>
 
-      <Toast open={toastOpen} onOpenChange={setToastOpen}>
-        <div className={`${toastMessage.isError ? 'bg-red-100 border-red-400' : 'bg-green-100 border-green-400'} border-l-4 p-4`}>
-          <ToastTitle className={`${toastMessage.isError ? 'text-red-800' : 'text-green-800'} font-bold`}>{toastMessage.title}</ToastTitle>
-          <ToastDescription className={`${toastMessage.isError ? 'text-red-700' : 'text-green-700'}`}>{toastMessage.description}</ToastDescription>
-        </div>
-      </Toast>
-      <ToastViewport />
-    </ToastProvider>
-  )
+  <Toast open={toastOpen} onOpenChange={setToastOpen}>
+    <div className={`${toastMessage.isError ? 'bg-red-100 border-red-400' : 'bg-green-100 border-green-400'} border-l-4 p-4`}>
+      <ToastTitle className={`${toastMessage.isError ? 'text-red-800' : 'text-green-800'} font-bold`}>{toastMessage.title}</ToastTitle>
+      <ToastDescription className={`${toastMessage.isError ? 'text-red-700' : 'text-green-700'}`}>{toastMessage.description}</ToastDescription>
+    </div>
+  </Toast>
+  <ToastViewport />
+</ToastProvider>
+
+      )
 }
-
