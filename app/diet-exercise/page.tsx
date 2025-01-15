@@ -18,9 +18,9 @@ export default function DietExercise() {
               <Link href="/diet-exercise/diet/add" passHref>
                 <Button className="w-full sm:w-auto">Add Diet Entry</Button>
               </Link>
-              <Button className="w-full sm:w-auto" onClick={() => console.log('Exercise log button clicked')}>
-                Log Exercise
-              </Button>
+              <Link href="/diet-exercise/exercise/add" passHref>
+                <Button className="w-full sm:w-auto">Log Exercise</Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
