@@ -15,7 +15,7 @@ export default function Behavior() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/behavior/events/add" passHref>
+              <Link href="/behavior/add" passHref>
                 <Button className="w-full sm:w-auto">Add Behavior Event</Button>
               </Link>
               <Link href="/behavior/training/add" passHref>
