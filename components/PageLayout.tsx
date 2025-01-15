@@ -12,7 +12,7 @@ interface PageLayoutProps {
 
 export function PageLayout({ children }: PageLayoutProps) {
   const pathname = usePathname()
-  const isLoginPage = pathname === '/login'
+  const isLoginPage = pathname === '/login' || pathname === '/signup'
 
   const getPageTitle = () => {
     switch (pathname) {
