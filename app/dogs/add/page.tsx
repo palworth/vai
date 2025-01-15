@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '../../contexts/AuthContext'
-import { collection, addDoc } from 'firebase/firestore'
+import { useAuth } from '@/app/contexts/AuthContext'
+import { collection, addDoc, doc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,7 +33,7 @@ export default function AddDogPage() {
     try {
       await addDoc(collection(db, 'dogs'), {
         ...newDog,
-        users: [user.uid]
+        users: [doc(db, 'users', user.uid)]
       })
       showToast('Dog Added', 'Your new dog has been successfully added.', false)
       setTimeout(() => router.push('/dogs'), 2000)

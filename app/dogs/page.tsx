@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { collection, getDocs, query, where, doc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from 'next/link'
@@ -22,7 +22,7 @@ export default function DogsPage() {
 
   const fetchDogs = useCallback(async () => {
     if (!user) return
-    const dogsQuery = query(collection(db, 'dogs'), where('users', 'array-contains', user.uid))
+    const dogsQuery = query(collection(db, 'dogs'), where('users', 'array-contains', doc(db, 'users', user.uid)))
     const querySnapshot = await getDocs(dogsQuery)
     const dogsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Dog))
     setDogs(dogsData)

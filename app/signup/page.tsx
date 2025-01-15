@@ -1,20 +1,22 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile } from 'firebase/auth'
+import { doc, setDoc } from 'firebase/firestore'
+import { auth, db } from '@/lib/firebase'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
 import { GoogleLogo } from '@/components/GoogleLogo'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
-export default function LoginPage() {
+export default function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
   const [toastOpen, setToastOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState({ title: '', description: '', isError: false })
   const router = useRouter()
@@ -25,27 +27,48 @@ export default function LoginPage() {
     setTimeout(() => setToastOpen(false), 3000)
   }
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const createUserDocument = async (userId: string, name: string, email: string) => {
+    await setDoc(doc(db, 'users', userId), {
+      name,
+      email,
+      createdAt: new Date(),
+    })
+  }
+
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await signInWithEmailAndPassword(auth, email, password)
-      showToast('Login Successful', 'You have been logged in.', false)
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      const user = userCredential.user
+
+      // Update user profile
+      await updateProfile(user, { displayName: name })
+
+      // Create user document in Firestore
+      await createUserDocument(user.uid, name, email)
+
+      showToast('Sign Up Successful', 'Your account has been created.', false)
       router.push('/')
     } catch (error) {
-      console.error('Error logging in:', error)
-      showToast('Login Failed', 'There was an error logging into your account.', true)
+      console.error('Error signing up:', error)
+      showToast('Sign Up Failed', 'There was an error creating your account.', true)
     }
   }
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleSignUp = async () => {
     const provider = new GoogleAuthProvider()
     try {
-      await signInWithPopup(auth, provider)
-      showToast('Login Successful', 'You have been logged in with Google.', false)
+      const result = await signInWithPopup(auth, provider)
+      const user = result.user
+
+      // Create user document in Firestore
+      await createUserDocument(user.uid, user.displayName || 'Google User', user.email || '')
+
+      showToast('Sign Up Successful', 'Your account has been created with Google.', false)
       router.push('/')
     } catch (error) {
-      console.error('Error logging in with Google:', error)
-      showToast('Login Failed', 'There was an error logging in with Google.', true)
+      console.error('Error signing up with Google:', error)
+      showToast('Sign Up Failed', 'There was an error creating your account with Google.', true)
     }
   }
 
@@ -54,11 +77,22 @@ export default function LoginPage() {
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Login</CardTitle>
-            <CardDescription>Sign in to your account</CardDescription>
+            <CardTitle>Sign Up</CardTitle>
+            <CardDescription>Create a new account to get started</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleSignUp} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Enter your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -81,20 +115,20 @@ export default function LoginPage() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full">Login</Button>
+              <Button type="submit" className="w-full">Sign Up</Button>
             </form>
             <div className="mt-4">
-              <Button variant="outline" className="w-full" onClick={handleGoogleLogin}>
+              <Button variant="outline" className="w-full" onClick={handleGoogleSignUp}>
                 <GoogleLogo className="mr-2 h-5 w-5" />
-                Sign in with Google
+                Sign up with Google
               </Button>
             </div>
           </CardContent>
           <CardFooter>
             <p className="text-sm text-center w-full">
-              Don&apos;t have an account?{' '}
-              <Link href="/signup" className="text-blue-500 hover:underline">
-                Sign up
+              Already have an account?{' '}
+              <Link href="/login" className="text-blue-500 hover:underline">
+                Sign in
               </Link>
             </p>
           </CardFooter>

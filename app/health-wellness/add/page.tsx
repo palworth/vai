@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { collection, query, where, getDocs } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/app/contexts/AuthContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,7 +27,7 @@ export default function AddHealthEventPage() {
  useEffect(() => {
    const fetchDogs = async () => {
      if (!user) return
-     const dogsQuery = query(collection(db, 'dogs'), where('users', 'array-contains', user.uid))
+     const dogsQuery = query(collection(db, 'dogs'), where('users', 'array-contains', doc(db, 'users', user.uid)))
      const querySnapshot = await getDocs(dogsQuery)
      const dogsData = querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as Dog))
      setDogs(dogsData)

@@ -16,6 +16,9 @@ interface Dog {
   id: string
   name: string
   breed: string
+  age: number
+  sex: string
+  weight: number
 }
 
 export default function Settings() {
@@ -27,9 +30,9 @@ export default function Settings() {
 
   const fetchDogs = useCallback(async () => {
     if (!user) return
-    const dogsQuery = query(collection(db, 'dogs'), where('users', 'array-contains', user.uid))
+    const dogsQuery = query(collection(db, 'dogs'), where('users', 'array-contains', doc(db, 'users', user.uid)))
     const querySnapshot = await getDocs(dogsQuery)
-    const dogsData = querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name, breed: doc.data().breed } as Dog))
+    const dogsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Dog))
     setDogs(dogsData)
   }, [user])
 
@@ -112,14 +115,19 @@ export default function Settings() {
                 <CardTitle>Manage My Dogs</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {dogs.map((dog) => (
                     <Link href={`/dogs/${dog.id}`} key={dog.id}>
                       <Card className="hover:shadow-md transition-shadow">
-                        <CardHeader className="p-4">
-                          <CardTitle className="text-lg">{dog.name}</CardTitle>
+                        <CardHeader>
+                          <CardTitle>{dog.name}</CardTitle>
                           <CardDescription>{dog.breed}</CardDescription>
                         </CardHeader>
+                        <CardContent>
+                          <p>Age: {dog.age}</p>
+                          <p>Sex: {dog.sex}</p>
+                          <p>Weight: {dog.weight} lbs</p>
+                        </CardContent>
                       </Card>
                     </Link>
                   ))}
