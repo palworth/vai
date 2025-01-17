@@ -43,4 +43,5 @@ next-env.d.ts
 # Sensitive data
 app/utils/firebaseRulesTest.ts
 app/utils/firebaseRulesTest.js
-
+config
+app/scripts/outputs/
