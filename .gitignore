@@ -44,3 +44,4 @@ next-env.d.ts
 app/utils/firebaseRulesTest.ts
 app/utils/firebaseRulesTest.js
 config
+app/scripts/outputs/
