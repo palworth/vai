@@ -1,95 +1,238 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { collection, query, where, getDocs, doc } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
-import { useAuth } from '@/app/contexts/AuthContext'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { api, type Dog } from "@/lib/api"
+import { useAuth } from "@/app/contexts/AuthContext"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
-import { ExerciseEventForm } from '@/app/components/ExerciseEventForm'
-import { PageHeader } from '@/components/PageHeader'
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
-interface Dog {
-  id: string
-  name: string
-}
+const SOURCES = ["Manual Add", "Strava", "Whoop", "Fitbit", "Garmin", "Apple Health"] as const
+type Source = (typeof SOURCES)[number]
+
+const ACTIVITY_TYPES = [
+  "Walking",
+  "Running/Jogging",
+  "Fetch",
+  "Hiking",
+  "Dog Park Playtime",
+  "Indoor Play",
+  "Outside Alone Time",
+  "Swimming",
+] as const
+type ActivityType = (typeof ACTIVITY_TYPES)[number]
 
 export default function AddExerciseEventPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { user } = useAuth()
   const [dogs, setDogs] = useState<Dog[]>([])
   const [selectedDogId, setSelectedDogId] = useState<string | null>(null)
+  const [selectedDogName, setSelectedDogName] = useState<string | null>(null)
+  const [duration, setDuration] = useState<number>(0)
+  const [distance, setDistance] = useState<number>(0)
+  const [source, setSource] = useState<Source>("Manual Add")
+  const [activityType, setActivityType] = useState<ActivityType>("Walking")
+  const [eventDate, setEventDate] = useState<string>(new Date().toISOString().slice(0, 16))
+  const [isLoading, setIsLoading] = useState(false)
   const [toastOpen, setToastOpen] = useState(false)
-  const [toastMessage, setToastMessage] = useState({ title: '', description: '', isError: false })
-  const router = useRouter()
-  const { user } = useAuth()
+  const [toastMessage, setToastMessage] = useState({ title: "", description: "", isError: false })
 
   useEffect(() => {
     const fetchDogs = async () => {
       if (!user) return
-      const dogsQuery = query(collection(db, 'dogs'), where('users', 'array-contains', doc(db, 'users', user.uid)))
-      const querySnapshot = await getDocs(dogsQuery)
-      const dogsData = querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as Dog))
-      setDogs(dogsData)
+      const dogIdFromParams = searchParams.get("dogId")
+
+      if (dogIdFromParams) {
+        // Fetch the specific dog
+        const dogDoc = await getDoc(doc(db, "dogs", dogIdFromParams))
+        if (dogDoc.exists()) {
+          const dogData = { id: dogDoc.id, ...dogDoc.data() } as Dog
+          setDogs([dogData])
+          setSelectedDogId(dogData.id)
+          setSelectedDogName(dogData.name)
+        } else {
+          showToast("Error", "Dog not found", true)
+        }
+      } else {
+        // Fetch all dogs for the user
+        const dogsQuery = query(collection(db, "dogs"), where("users", "array-contains", doc(db, "users", user.uid)))
+        const querySnapshot = await getDocs(dogsQuery)
+        const dogsData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Dog)
+        setDogs(dogsData)
+      }
     }
 
     fetchDogs()
-  }, [user])
+  }, [user, searchParams])
 
-  const showToast = (title: string, description: string, isError: boolean = false) => {
-    setToastMessage({ title, description, isError })
-    setToastOpen(true)
-    
-    setTimeout(() => {
-      setToastOpen(false)
-    }, 2000)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    if (!user || !selectedDogId) {
+      showToast("Error", "Please select a dog and ensure you're logged in", true)
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const exerciseEventData = {
+        userId: user.uid,
+        dogId: selectedDogId,
+        duration,
+        distance,
+        source,
+        activityType,
+        eventDate: new Date(eventDate).toISOString(),
+      }
+
+      await api.exerciseEvents.create(exerciseEventData)
+      showToast("Success", "Exercise event added successfully", false)
+      setTimeout(() => {
+        router.push(`/dogs/${selectedDogId}`)
+      }, 2000)
+    } catch (error) {
+      console.error("Error adding exercise event:", error)
+      showToast(
+        "Error",
+        `Failed to add exercise event: ${error instanceof Error ? error.message : "Unknown error"}`,
+        true,
+      )
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleSuccess = () => {
-    showToast('Exercise Event Added', 'The exercise event has been successfully added.', false)
-    setTimeout(() => {
-      router.push('/diet-exercise')
-    }, 2000)
+  const showToast = (title: string, description: string, isError: boolean) => {
+    setToastMessage({ title, description, isError })
+    setToastOpen(true)
   }
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-gray-100">
-        <PageHeader title="Add Exercise Event" />
-        <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Add New Exercise Event</CardTitle>
-              <CardDescription>Select a dog and enter the exercise event details</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-6">
-                <Select onValueChange={(value) => setSelectedDogId(value)}>
+      <div className="container mx-auto py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Add Exercise Event</CardTitle>
+            <CardDescription>Record a new exercise event for your dog</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {selectedDogName ? (
+                <div className="space-y-2">
+                  <Label>Selected Dog</Label>
+                  <p className="text-lg font-medium">{selectedDogName}</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="dogSelect">Select Dog</Label>
+                  <Select value={selectedDogId || ""} onValueChange={(value) => setSelectedDogId(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a dog" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {dogs.map((dog) => (
+                        <SelectItem key={dog.id} value={dog.id}>
+                          {dog.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="eventDate">Event Date and Time</Label>
+                <Input
+                  id="eventDate"
+                  type="datetime-local"
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="activityType">Activity Type</Label>
+                <Select value={activityType} onValueChange={(value: ActivityType) => setActivityType(value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a dog" />
+                    <SelectValue placeholder="Select activity type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {dogs.map((dog) => (
-                      <SelectItem key={dog.id} value={dog.id}>{dog.name}</SelectItem>
+                    {ACTIVITY_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              {selectedDogId && (
-                <ExerciseEventForm
-                  dogId={selectedDogId}
-                  onSuccess={handleSuccess}
-                  onCancel={() => router.push('/diet-exercise')}
+              <div className="space-y-2">
+                <Label htmlFor="duration">Duration (minutes)</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                  required
+                  min="0"
                 />
-              )}
-            </CardContent>
-          </Card>
-        </main>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="distance">Distance (miles)</Label>
+                <Input
+                  id="distance"
+                  type="number"
+                  value={distance}
+                  onChange={(e) => setDistance(Number(e.target.value))}
+                  required
+                  min="0"
+                  step="0.1"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="source">Source</Label>
+                <Select value={source} onValueChange={(value: Source) => setSource(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SOURCES.map((src) => (
+                      <SelectItem key={src} value={src}>
+                        {src}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "Adding..." : "Add Exercise Event"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
+
       <Toast open={toastOpen} onOpenChange={setToastOpen}>
-        <div className={`${toastMessage.isError ? 'bg-red-100 border-red-400' : 'bg-green-100 border-green-400'} border-l-4 p-4`}>
-          <ToastTitle className={`${toastMessage.isError ? 'text-red-800' : 'text-green-800'} font-bold`}>{toastMessage.title}</ToastTitle>
-          <ToastDescription className={`${toastMessage.isError ? 'text-red-700' : 'text-green-700'}`}>{toastMessage.description}</ToastDescription>
+        <div
+          className={`${toastMessage.isError ? "bg-red-100 border-red-400" : "bg-green-100 border-green-400"} border-l-4 p-4`}
+        >
+          <ToastTitle className={`${toastMessage.isError ? "text-red-800" : "text-green-800"} font-bold`}>
+            {toastMessage.title}
+          </ToastTitle>
+          <ToastDescription className={`${toastMessage.isError ? "text-red-700" : "text-green-700"}`}>
+            {toastMessage.description}
+          </ToastDescription>
         </div>
       </Toast>
       <ToastViewport />

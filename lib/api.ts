@@ -24,8 +24,8 @@ export interface Dog {
 
 export interface HealthEvent {
   id: string
-  userId: string // Changed from FirestoreReference
-  dogId: string // Changed from FirestoreReference
+  userId: string
+  dogId: string
   createdAt: Timestamp
   updatedAt: Timestamp
   type: "health"
@@ -44,6 +44,31 @@ export interface BehaviorEvent {
   eventType: string
   notes: string
   severity: number
+}
+
+export interface DietEvent {
+  id: string
+  userId: string
+  dogId: string
+  createdAt: Timestamp
+  updatedAt: Timestamp
+  type: "diet"
+  foodType: "dry kibble" | "homemade" | "raw" | "custom" | "wet"
+  brandName: string
+  quantity: number
+}
+
+export interface ExerciseEvent {
+  id: string
+  userId: string
+  dogId: string
+  createdAt: Timestamp
+  updatedAt: Timestamp
+  type: "exercise"
+  duration: number
+  distance: number
+  source: string
+  activityType: string
 }
 
 export const api = {
@@ -158,6 +183,40 @@ export const api = {
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || "Failed to create behavior event")
+      }
+      return response.json()
+    },
+  },
+  dietEvents: {
+    create: async (dietEvent: Omit<DietEvent, "id" | "createdAt" | "updatedAt" | "type">): Promise<DietEvent> => {
+      const response = await fetch("/api/diet-events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dietEvent),
+      })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to create diet event")
+      }
+      return response.json()
+    },
+  },
+  exerciseEvents: {
+    create: async (
+      exerciseEvent: Omit<ExerciseEvent, "id" | "createdAt" | "updatedAt" | "type">,
+    ): Promise<ExerciseEvent> => {
+      const response = await fetch("/api/exercise-events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(exerciseEvent),
+      })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to create exercise event")
       }
       return response.json()
     },
