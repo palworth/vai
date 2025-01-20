@@ -29,7 +29,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { messages, dogId, userId, isGeneralChat } = await req.json()
+    const { messages, dogId, isGeneralChat } = await req.json()
+
+    // If we might need userId in the future, use this instead:
+    // const { messages, dogId, /* userId, */ isGeneralChat } = await req.json()
 
     let context = ""
 

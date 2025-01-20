@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/app/contexts/AuthContext"
 import { ChatWindow } from "@/app/components/ChatWindow"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,19 +19,19 @@ export default function VetAIChat() {
   const [dogs, setDogs] = useState<Dog[]>([])
   const { user } = useAuth()
 
-  useEffect(() => {
-    if (user) {
-      fetchUserDogs()
-    }
-  }, [user])
-
-  const fetchUserDogs = async () => {
+  const fetchUserDogs = useCallback(async () => {
     if (!user) return
     const dogsQuery = query(collection(db, "dogs"), where("users", "array-contains", doc(db, "users", user.uid)))
     const querySnapshot = await getDocs(dogsQuery)
     const dogsData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Dog)
     setDogs(dogsData)
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (user) {
+      fetchUserDogs()
+    }
+  }, [user, fetchUserDogs])
 
   return (
     <div className="container mx-auto py-8">

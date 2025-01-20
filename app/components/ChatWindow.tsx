@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/app/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,13 +30,7 @@ export function ChatWindow() {
   const [isGeneralChat, setIsGeneralChat] = useState(false)
   const { user } = useAuth()
 
-  useEffect(() => {
-    if (user) {
-      fetchUserDogs()
-    }
-  }, [user])
-
-  const fetchUserDogs = async () => {
+  const fetchUserDogs = useCallback(async () => {
     if (!user) return
     const dogsQuery = query(collection(db, "dogs"), where("users", "array-contains", doc(db, "users", user.uid)))
     const querySnapshot = await getDocs(dogsQuery)
@@ -45,7 +39,13 @@ export function ChatWindow() {
     if (dogsData.length > 0 && !isGeneralChat) {
       setSelectedDogId(dogsData[0].id)
     }
-  }
+  }, [user, isGeneralChat])
+
+  useEffect(() => {
+    if (user) {
+      fetchUserDogs()
+    }
+  }, [user, fetchUserDogs])
 
   const sendMessage = async () => {
     if (input.trim() === "" || (!selectedDogId && !isGeneralChat)) return
