@@ -15,6 +15,7 @@ import { BehaviorEventsSection } from "@/app/components/BehaviorEventsSection"
 import { DietEventsSection } from "@/app/components/DietEventsSection"
 import { ExerciseEventsSection } from "@/app/components/ExerciseEventsSection"
 import { TrainingPlansSection } from "@/app/components/TrainingPlansSection"
+import { WellnessEventsSection } from "@/app/components/WellnessEventsSection"
 
 export default function DogPage() {
   const params = useParams()
@@ -206,6 +207,7 @@ export default function DogPage() {
         <BehaviorEventsSection dogId={dog.id} showToast={showToast} />
         <DietEventsSection dogId={dog.id} showToast={showToast} />
         <ExerciseEventsSection dogId={dog.id} showToast={showToast} />
+        <WellnessEventsSection dogId={dog.id} showToast={showToast} />
         <TrainingPlansSection dogId={dog.id} showToast={showToast} />
       </div>
 

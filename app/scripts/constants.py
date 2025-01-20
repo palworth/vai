@@ -54,3 +54,6 @@ HEALTH_NOTES = [
     "Teeth cleaned.",
     "Injury treated."
 ]
+WELLNESS_TYPES = [
+    "depressed", "anxious", "lethargic", "happy", "loving", "nervous"
+]

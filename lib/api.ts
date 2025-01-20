@@ -71,6 +71,17 @@ export interface ExerciseEvent {
   activityType: string
 }
 
+export interface WellnessEvent {
+  id: string
+  userId: string
+  dogId: string
+  createdAt: Timestamp
+  updatedAt: Timestamp
+  type: "wellness"
+  mentalState: "depressed" | "anxious" | "lethargic" | "happy" | "loving" | "nervous"
+  severity: number
+}
+
 export const api = {
   dogs: {
     getAll: async (): Promise<Dog[]> => {
@@ -217,6 +228,24 @@ export const api = {
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || "Failed to create exercise event")
+      }
+      return response.json()
+    },
+  },
+  wellnessEvents: {
+    create: async (
+      wellnessEvent: Omit<WellnessEvent, "id" | "createdAt" | "updatedAt" | "type">,
+    ): Promise<WellnessEvent> => {
+      const response = await fetch("/api/wellness-events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(wellnessEvent),
+      })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to create wellness event")
       }
       return response.json()
     },
