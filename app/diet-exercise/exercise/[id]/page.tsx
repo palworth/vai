@@ -1,6 +1,8 @@
 import { ExerciseEventDetails } from "@/app/components/ExerciseEventDetails"
 
-export default function ExerciseEventPage({ params }: { params: { id: string } }) {
-  return <ExerciseEventDetails id={params.id} />
+export default async function ExerciseEventPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return <ExerciseEventDetails id={id} />
 }
+
 

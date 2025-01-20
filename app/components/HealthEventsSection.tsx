@@ -17,13 +17,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { format } from "date-fns"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-// import HealthEventForm from "@/app/components/HealthEventForm" // Updated import statement
 
 interface HealthEvent {
   id: string
   dogId: DocumentReference
   userId: DocumentReference
-  eventDate: Date // Removed optional modifier
+  eventDate: Date
   type: "health"
   eventType: string
   notes: string
@@ -38,8 +37,6 @@ interface HealthEventsSectionProps {
 export function HealthEventsSection({ dogId, showToast }: HealthEventsSectionProps) {
   const router = useRouter()
   const [healthEvents, setHealthEvents] = useState<HealthEvent[]>([])
-  //const [showHealthEventForm, setShowHealthEventForm] = useState(false) //Removed
-  //const [editingHealthEvent, setEditingHealthEvent] = useState<HealthEvent | null>(null) //Removed
 
   const fetchHealthEvents = useCallback(async () => {
     const dogRef = doc(db, "dogs", dogId)
@@ -53,19 +50,13 @@ export function HealthEventsSection({ dogId, showToast }: HealthEventsSectionPro
         eventDate: data.eventDate instanceof Timestamp ? data.eventDate.toDate() : new Date(),
       } as HealthEvent
     })
-    console.log("Fetched health events:", eventsData) // Add this line for debugging
+    console.log("Fetched health events:", eventsData)
     setHealthEvents(eventsData)
   }, [dogId])
 
   useEffect(() => {
     fetchHealthEvents()
   }, [fetchHealthEvents])
-
-  const handleEditHealthEvent = (event: HealthEvent) => {
-    //setEditingHealthEvent(event) //Removed
-    //setShowHealthEventForm(true) //Removed
-    router.push(`/health-wellness/health/edit?id=${event.id}`) //Added
-  }
 
   const handleDeleteHealthEvent = async (eventId: string) => {
     try {
@@ -92,8 +83,6 @@ export function HealthEventsSection({ dogId, showToast }: HealthEventsSectionPro
         >
           Add Health Event
         </Button>
-
-        {/*Removed showHealthEventForm and HealthEventForm related code */}
 
         <div className="mt-6 space-y-4">
           {healthEvents.map((event) => (

@@ -1,6 +1,7 @@
 import { DietEventDetails } from "@/app/components/DietEventDetails"
 
-export default function DietEventPage({ params }: { params: { id: string } }) {
-  return <DietEventDetails id={params.id} />
+export default async function DietEventPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return <DietEventDetails id={id} />
 }
 

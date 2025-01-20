@@ -58,10 +58,6 @@ export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectio
     fetchBehaviorEvents()
   }, [fetchBehaviorEvents])
 
-  const handleEditBehaviorEvent = (event: BehaviorEvent) => {
-    router.push(`/behavior/edit?id=${event.id}`)
-  }
-
   const handleDeleteBehaviorEvent = async (eventId: string) => {
     try {
       await deleteDoc(doc(db, "behaviorEvents", eventId))

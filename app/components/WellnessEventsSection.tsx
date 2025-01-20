@@ -24,7 +24,8 @@ interface WellnessEvent {
   userId: DocumentReference
   eventDate: Date
   type: "wellness"
-  mentalState: "depressed" | "anxious" | "lethargic" | "happy" | "loving" | "nervous"
+  mentalState: string
+  notes: string
   severity: number
 }
 
@@ -57,10 +58,6 @@ export function WellnessEventsSection({ dogId, showToast }: WellnessEventsSectio
     fetchWellnessEvents()
   }, [fetchWellnessEvents])
 
-  const handleEditWellnessEvent = (event: WellnessEvent) => {
-    router.push(`/health-wellness/wellness/edit?id=${event.id}`)
-  }
-
   const handleDeleteWellnessEvent = async (eventId: string) => {
     try {
       await deleteDoc(doc(db, "wellnessEvents", eventId))
@@ -91,7 +88,7 @@ export function WellnessEventsSection({ dogId, showToast }: WellnessEventsSectio
           {wellnessEvents.map((event) => (
             <Card key={event.id}>
               <CardHeader>
-                <CardTitle>{event.mentalState.charAt(0).toUpperCase() + event.mentalState.slice(1)}</CardTitle>
+                <CardTitle>{event.mentalState}</CardTitle>
                 <CardDescription>
                   {event.eventDate ? format(event.eventDate, "MMMM d, yyyy HH:mm") : "No date available"}
                 </CardDescription>
@@ -99,6 +96,9 @@ export function WellnessEventsSection({ dogId, showToast }: WellnessEventsSectio
               <CardContent>
                 <p>
                   <strong>Severity:</strong> {event.severity}/10
+                </p>
+                <p>
+                  <strong>Notes:</strong> {event.notes}
                 </p>
               </CardContent>
               <CardFooter className="flex justify-end space-x-2">
