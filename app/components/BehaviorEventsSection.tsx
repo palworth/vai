@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { format } from "date-fns"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 interface BehaviorEvent {
   id: string
@@ -105,9 +106,9 @@ export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectio
                 </p>
               </CardContent>
               <CardFooter className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => handleEditBehaviorEvent(event)}>
-                  Edit
-                </Button>
+                <Link href={`/behavior/${event.id}`} passHref>
+                  <Button variant="outline">View / Edit</Button>
+                </Link>
                 <Button variant="destructive" onClick={() => handleDeleteBehaviorEvent(event.id)}>
                   Delete
                 </Button>

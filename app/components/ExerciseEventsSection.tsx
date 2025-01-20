@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { format } from "date-fns"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 interface ExerciseEvent {
   id: string
@@ -57,10 +58,6 @@ export function ExerciseEventsSection({ dogId, showToast }: ExerciseEventsSectio
   useEffect(() => {
     fetchExerciseEvents()
   }, [fetchExerciseEvents])
-
-  const handleEditExerciseEvent = (event: ExerciseEvent) => {
-    router.push(`/diet-exercise/exercise/edit?id=${event.id}`)
-  }
 
   const handleDeleteExerciseEvent = async (eventId: string) => {
     try {
@@ -109,9 +106,9 @@ export function ExerciseEventsSection({ dogId, showToast }: ExerciseEventsSectio
                 </p>
               </CardContent>
               <CardFooter className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => handleEditExerciseEvent(event)}>
-                  Edit
-                </Button>
+                <Link href={`/diet-exercise/exercise/${event.id}`} passHref>
+                  <Button variant="outline">View / Edit</Button>
+                </Link>
                 <Button variant="destructive" onClick={() => handleDeleteExerciseEvent(event.id)}>
                   Delete
                 </Button>

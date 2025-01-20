@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { format } from "date-fns"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 interface WellnessEvent {
   id: string
@@ -101,9 +102,9 @@ export function WellnessEventsSection({ dogId, showToast }: WellnessEventsSectio
                 </p>
               </CardContent>
               <CardFooter className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => handleEditWellnessEvent(event)}>
-                  Edit
-                </Button>
+                <Link href={`/health-wellness/wellness/${event.id}`} passHref>
+                  <Button variant="outline">View / Edit</Button>
+                </Link>
                 <Button variant="destructive" onClick={() => handleDeleteWellnessEvent(event.id)}>
                   Delete
                 </Button>
