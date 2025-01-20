@@ -1,57 +1,93 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { collection, addDoc, Timestamp, doc, updateDoc, arrayUnion } from "firebase/firestore"
+import { NextResponse } from "next/server"
+import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, addDoc, Timestamp } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
-export async function POST(req: NextRequest) {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const dogId = searchParams.get("dogId")
+
+  if (!dogId) {
+    return NextResponse.json({ error: "dogId is required" }, { status: 400 })
+  }
+
   try {
-    const data = await req.json()
+    const dogRef = doc(db, "dogs", dogId)
+    const healthEventsQuery = query(collection(db, "healthEvents"), where("dogId", "==", dogRef))
+    const querySnapshot = await getDocs(healthEventsQuery)
 
-    // Validate required fields
-    const requiredFields = ["userId", "dogId", "eventType", "notes", "severity"]
-    for (const field of requiredFields) {
-      if (!data[field]) {
-        return NextResponse.json({ error: `${field} is required` }, { status: 400 })
+    const events = querySnapshot.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        ...data,
+        eventDate: data.eventDate instanceof Timestamp ? data.eventDate.toDate().toISOString() : null,
       }
-    }
-
-    // Validate severity
-    if (typeof data.severity !== "number" || data.severity < 1 || data.severity > 10) {
-      return NextResponse.json({ error: "Severity must be a number between 1 and 10" }, { status: 400 })
-    }
-
-    const now = Timestamp.now()
-
-    const healthEventData = {
-      userId: data.userId, // Now expecting a string
-      dogId: data.dogId, // Now expecting a string
-      createdAt: now,
-      updatedAt: now,
-      type: "health",
-      eventType: data.eventType,
-      notes: data.notes,
-      severity: data.severity,
-    }
-
-    const docRef = await addDoc(collection(db, "healthEvents"), {
-      ...healthEventData,
-      userId: doc(db, "users", data.userId), // Create Firestore reference here
-      dogId: doc(db, "dogs", data.dogId), // Create Firestore reference here
     })
 
-    // Add the health event reference to the dog's healthEventIds array
-    await updateDoc(doc(db, "dogs", data.dogId), {
-      healthEventIds: arrayUnion(docRef),
-    })
+    return NextResponse.json(events)
+  } catch (error) {
+    console.error("Error fetching health events:", error)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+  }
+}
 
-    const newHealthEvent = {
-      id: docRef.id,
-      ...healthEventData,
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    const dogRef = doc(db, "dogs", body.dogId)
+    const userRef = doc(db, "users", body.userId)
+    const eventData = {
+      ...body,
+      dogId: dogRef,
+      userId: userRef,
+      eventDate: Timestamp.fromDate(new Date(body.eventDate)),
     }
-
-    return NextResponse.json(newHealthEvent)
+    const docRef = await addDoc(collection(db, "healthEvents"), eventData)
+    return NextResponse.json({ id: docRef.id, ...eventData })
   } catch (error) {
     console.error("Error creating health event:", error)
-    return NextResponse.json({ error: "Failed to create health event" }, { status: 500 })
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const { id, ...updateData } = await request.json()
+    const docRef = doc(db, "healthEvents", id)
+
+    if (updateData.dogId) {
+      updateData.dogId = doc(db, "dogs", updateData.dogId)
+    }
+    if (updateData.userId) {
+      updateData.userId = doc(db, "users", updateData.userId)
+    }
+    if (updateData.eventDate) {
+      updateData.eventDate = Timestamp.fromDate(new Date(updateData.eventDate))
+    }
+
+    await updateDoc(docRef, updateData)
+    return NextResponse.json({ message: "Event updated successfully" })
+  } catch (error) {
+    console.error("Error updating health event:", error)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get("id")
+
+  if (!id) {
+    return NextResponse.json({ error: "id is required" }, { status: 400 })
+  }
+
+  try {
+    const docRef = doc(db, "healthEvents", id)
+    await deleteDoc(docRef)
+    return NextResponse.json({ message: "Event deleted successfully" })
+  } catch (error) {
+    console.error("Error deleting health event:", error)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
 

@@ -1,5 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { collection, addDoc, Timestamp, doc, updateDoc, arrayUnion } from "firebase/firestore"
+import {
+  collection,
+  addDoc,
+  Timestamp,
+  doc,
+  updateDoc,
+  arrayUnion,
+  query,
+  where,
+  getDocs,
+  deleteDoc,
+} from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
 export async function POST(req: NextRequest) {
@@ -58,6 +69,57 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Error creating diet event:", error)
     return NextResponse.json({ error: "Failed to create diet event" }, { status: 500 })
+  }
+}
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const dogId = searchParams.get("dogId")
+
+  if (!dogId) {
+    return NextResponse.json({ error: "dogId is required" }, { status: 400 })
+  }
+
+  try {
+    const dogRef = doc(db, "dogs", dogId)
+    const dietEventsQuery = query(collection(db, "dietEvents"), where("dogId", "==", dogRef))
+    const querySnapshot = await getDocs(dietEventsQuery)
+
+    const events = querySnapshot.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        ...data,
+        userId: data.userId.id,
+        dogId: data.dogId.id,
+        eventDate: data.eventDate instanceof Timestamp ? data.eventDate.toDate().toISOString() : null,
+        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : null,
+        updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toISOString() : null,
+      }
+    })
+
+    return NextResponse.json(events)
+  } catch (error) {
+    console.error("Error fetching diet events:", error)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get("id")
+
+  if (!id) {
+    return NextResponse.json({ error: "id is required" }, { status: 400 })
+  }
+
+  try {
+    const docRef = doc(db, "dietEvents", id)
+    await deleteDoc(docRef)
+    return NextResponse.json({ message: "Event deleted successfully" })
+  } catch (error) {
+    console.error("Error deleting diet event:", error)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
 
