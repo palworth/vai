@@ -20,13 +20,12 @@ interface HealthEvent {
 }
 
 interface HealthEventFormProps {
-  dogId: string
   event?: Omit<HealthEvent, "id" | "dogId" | "userId" | "type">
   onSuccess: () => void
   onCancel: () => void
 }
 
-const HealthEventForm: React.FC<HealthEventFormProps> = ({ dogId, event, onSuccess, onCancel }) => {
+const HealthEventForm: React.FC<HealthEventFormProps> = ({ event, onSuccess, onCancel }) => {
   const [healthEvent, setHealthEvent] = useState<Omit<HealthEvent, "id" | "dogId" | "userId" | "type">>({
     eventDate: event?.eventDate || new Date(),
     eventType: event?.eventType || "",

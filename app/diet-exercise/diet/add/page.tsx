@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { api, type Dog } from "@/lib/api"
+import type { Dog } from "@/lib/api"
 import { useAuth } from "@/app/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,7 +16,7 @@ import { db } from "@/lib/firebase"
 const FOOD_TYPES = ["dry kibble", "homemade", "raw", "custom", "wet"] as const
 type FoodType = (typeof FOOD_TYPES)[number]
 
-const foodTypes = ["dry kibble", "homemade", "raw", "custom", "wet"]
+// const foodTypes = ["dry kibble", "homemade", "raw", "custom", "wet"]
 
 export default function AddDietEventPage() {
   const router = useRouter()
@@ -78,10 +78,23 @@ export default function AddDietEventPage() {
         foodType,
         brandName,
         quantity,
-        eventDate: new Date(eventDate).toISOString(),
+        eventDate: new Date(eventDate),
       }
 
-      await api.dietEvents.create(dietEventData)
+      const response = await fetch("/api/diet-events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dietEventData),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        throw new Error(errorData)
+      }
+
+      // const data = await response.json() //Removed unused variable
       showToast("Success", "Diet event added successfully", false)
       setTimeout(() => {
         router.push(`/dogs/${selectedDogId}`)

@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { format } from "date-fns"
 import { useRouter } from "next/navigation"
-import HealthEventForm from "@/app/components/HealthEventForm" // Updated import statement
+// import HealthEventForm from "@/app/components/HealthEventForm" // Updated import statement
 
 interface HealthEvent {
   id: string
