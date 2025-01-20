@@ -64,7 +64,7 @@ export function HealthEventsSection({ dogId, showToast }: HealthEventsSectionPro
   const handleEditHealthEvent = (event: HealthEvent) => {
     //setEditingHealthEvent(event) //Removed
     //setShowHealthEventForm(true) //Removed
-    router.push(`/health-wellness/edit?id=${event.id}`) //Added
+    router.push(`/health-wellness/health/edit?id=${event.id}`) //Added
   }
 
   const handleDeleteHealthEvent = async (eventId: string) => {
@@ -87,7 +87,7 @@ export function HealthEventsSection({ dogId, showToast }: HealthEventsSectionPro
       <CardContent>
         <Button
           onClick={() => {
-            router.push(`/health-wellness/add?dogId=${dogId}`)
+            router.push(`/health-wellness/health/add?dogId=${dogId}`)
           }}
         >
           Add Health Event

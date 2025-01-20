@@ -16,7 +16,10 @@ interface DietEvent {
   foodType: string
   brandName: string
   quantity: number
-  eventDate: string
+  createdAt: {
+    seconds: number
+    nanoseconds: number
+  }
 }
 
 const FOOD_TYPES = ["dry kibble", "homemade", "raw", "custom", "wet"] as const
@@ -36,10 +39,8 @@ export function DietEventDetails({ id }: { id: string }) {
         const response = await fetch(`/api/diet-events/${id}`)
         if (!response.ok) throw new Error("Failed to fetch event")
         const data = await response.json()
-        setEvent({
-          ...data,
-          eventDate: data.eventDate ? new Date(data.eventDate).toISOString().slice(0, 16) : "",
-        })
+        console.log("Fetched event data:", data)
+        setEvent(data)
       } catch (error) {
         console.error("Error fetching event:", error)
         showToast("Error", "Failed to fetch event details", true)
@@ -57,7 +58,11 @@ export function DietEventDetails({ id }: { id: string }) {
       const response = await fetch(`/api/diet-events/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(event),
+        body: JSON.stringify({
+          foodType: event.foodType,
+          brandName: event.brandName,
+          quantity: event.quantity,
+        }),
       })
 
       if (!response.ok) throw new Error("Failed to update event")
@@ -89,6 +94,22 @@ export function DietEventDetails({ id }: { id: string }) {
   const showToast = (title: string, description: string, isError: boolean) => {
     setToastMessage({ title, description, isError })
     setToastOpen(true)
+  }
+
+  const formatDate = (timestamp: { seconds: number; nanoseconds: number }) => {
+    if (!timestamp || !timestamp.seconds) {
+      return "No date available"
+    }
+    const date = new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000)
+    return date.toLocaleString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZoneName: "short",
+    })
   }
 
   if (!event) return <div>Loading...</div>
@@ -145,15 +166,8 @@ export function DietEventDetails({ id }: { id: string }) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="eventDate">Event Date</Label>
-                <Input
-                  id="eventDate"
-                  type="datetime-local"
-                  value={event.eventDate}
-                  onChange={(e) => setEvent({ ...event, eventDate: e.target.value })}
-                  disabled={!isEditing}
-                  required
-                />
+                <Label htmlFor="createdAt">Event Date</Label>
+                <p>{formatDate(event.createdAt)}</p>
               </div>
               {isEditing ? (
                 <div className="flex justify-end space-x-2">
