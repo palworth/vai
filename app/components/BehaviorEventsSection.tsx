@@ -1,17 +1,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  deleteDoc,
-  doc,
-  type DocumentReference,
-  Timestamp,
-} from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { format } from "date-fns"
@@ -20,9 +9,9 @@ import Link from "next/link"
 
 interface BehaviorEvent {
   id: string
-  dogId: DocumentReference
-  userId: DocumentReference
-  eventDate: Date
+  dogId: string
+  userId: string
+  eventDate: string
   type: "behavior"
   eventType: string
   notes: string
@@ -37,22 +26,31 @@ interface BehaviorEventsSectionProps {
 export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectionProps) {
   const router = useRouter()
   const [behaviorEvents, setBehaviorEvents] = useState<BehaviorEvent[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchBehaviorEvents = useCallback(async () => {
-    const dogRef = doc(db, "dogs", dogId)
-    const behaviorEventsQuery = query(collection(db, "behaviorEvents"), where("dogId", "==", dogRef))
-    const querySnapshot = await getDocs(behaviorEventsQuery)
-    const eventsData = querySnapshot.docs.map((doc) => {
-      const data = doc.data()
-      return {
-        id: doc.id,
-        ...data,
-        eventDate: data.eventDate instanceof Timestamp ? data.eventDate.toDate() : new Date(),
-      } as BehaviorEvent
-    })
-    console.log("Fetched behavior events:", eventsData)
-    setBehaviorEvents(eventsData)
-  }, [dogId])
+    if (isLoading) return
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/behavior-events?dogId=${dogId}`)
+      if (!response.ok) {
+        throw new Error("Failed to fetch behavior events")
+      }
+      const data = await response.json()
+      console.log("Fetched behavior events:", data)
+      setBehaviorEvents(data)
+    } catch (error) {
+      console.error("Error fetching behavior events:", error)
+      setError("Failed to fetch behavior events. Please try again later.")
+      showToast("Error", "Failed to fetch behavior events", true)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [dogId, showToast])
 
   useEffect(() => {
     fetchBehaviorEvents()
@@ -60,13 +58,22 @@ export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectio
 
   const handleDeleteBehaviorEvent = async (eventId: string) => {
     try {
-      await deleteDoc(doc(db, "behaviorEvents", eventId))
+      const response = await fetch(`/api/behavior-events?id=${eventId}`, {
+        method: "DELETE",
+      })
+      if (!response.ok) {
+        throw new Error("Failed to delete event")
+      }
       fetchBehaviorEvents()
       showToast("Behavior Event Deleted", "The behavior event has been successfully deleted.", false)
     } catch (error) {
       console.error("Error deleting behavior event:", error)
       showToast("Error", "There was a problem deleting the behavior event.", true)
     }
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>
   }
 
   return (
@@ -84,34 +91,38 @@ export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectio
           Add Behavior Event
         </Button>
 
-        <div className="mt-6 space-y-4">
-          {behaviorEvents.map((event) => (
-            <Card key={event.id}>
-              <CardHeader>
-                <CardTitle>{event.eventType}</CardTitle>
-                <CardDescription>
-                  {event.eventDate ? format(event.eventDate, "MMMM d, yyyy HH:mm") : "No date available"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p>
-                  <strong>Severity:</strong> {event.severity}/10
-                </p>
-                <p>
-                  <strong>Notes:</strong> {event.notes}
-                </p>
-              </CardContent>
-              <CardFooter className="flex justify-end space-x-2">
-                <Link href={`/behavior/${event.id}`} passHref>
-                  <Button variant="outline">View / Edit</Button>
-                </Link>
-                <Button variant="destructive" onClick={() => handleDeleteBehaviorEvent(event.id)}>
-                  Delete
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+        {isLoading ? (
+          <div>Loading behavior events...</div>
+        ) : (
+          <div className="mt-6 space-y-4">
+            {behaviorEvents.map((event) => (
+              <Card key={event.id}>
+                <CardHeader>
+                  <CardTitle>{event.eventType}</CardTitle>
+                  <CardDescription>
+                    {event.eventDate ? format(new Date(event.eventDate), "MMMM d, yyyy HH:mm") : "No date available"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p>
+                    <strong>Severity:</strong> {event.severity}/10
+                  </p>
+                  <p>
+                    <strong>Notes:</strong> {event.notes}
+                  </p>
+                </CardContent>
+                <CardFooter className="flex justify-end space-x-2">
+                  <Link href={`/behavior/${event.id}`} passHref>
+                    <Button variant="outline">View / Edit</Button>
+                  </Link>
+                  <Button variant="destructive" onClick={() => handleDeleteBehaviorEvent(event.id)}>
+                    Delete
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   )
