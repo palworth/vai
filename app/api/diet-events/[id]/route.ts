@@ -1,42 +1,43 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const id = params.id
-  const eventRef = doc(db, "dietEvents", id)
-  const eventSnap = await getDoc(eventRef)
-
-  if (!eventSnap.exists()) {
-    return NextResponse.json({ error: "Event not found" }, { status: 404 })
-  }
-
-  return NextResponse.json({ id: eventSnap.id, ...eventSnap.data() })
-}
-
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
-  const id = params.id
-  const data = await request.json()
-  const eventRef = doc(db, "dietEvents", id)
-
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    await updateDoc(eventRef, data)
-    const updatedSnap = await getDoc(eventRef)
-    return NextResponse.json({ id: updatedSnap.id, ...updatedSnap.data() })
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to update event" }, { status: 500 })
+    const docRef = doc(db, "dietEvents", params.id)
+    const docSnap = await getDoc(docRef)
+
+    if (docSnap.exists()) {
+      return NextResponse.json(docSnap.data())
+    } else {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 })
+    }
+  } catch (_error) {
+    console.error("Error fetching diet event:", _error)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
-  const id = params.id
-  const eventRef = doc(db, "dietEvents", id)
-
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
-    await deleteDoc(eventRef)
+    const body = await request.json()
+    const docRef = doc(db, "dietEvents", params.id)
+    await updateDoc(docRef, body)
+    return NextResponse.json({ message: "Event updated successfully" })
+  } catch (_error) {
+    console.error("Error updating diet event:", _error)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  try {
+    const docRef = doc(db, "dietEvents", params.id)
+    await deleteDoc(docRef)
     return NextResponse.json({ message: "Event deleted successfully" })
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to delete event" }, { status: 500 })
+  } catch (_error) {
+    console.error("Error deleting diet event:", _error)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
 
