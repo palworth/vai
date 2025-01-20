@@ -19,7 +19,19 @@ export interface Dog {
   behaviorEventIds: string[]
   dietEventIds: string[]
   exerciseEventIds: string[]
-  healthEventIds: string[]
+  healthEventIds: FirestoreReference[]
+}
+
+export interface HealthEvent {
+  id: string
+  userId: string // Changed from FirestoreReference
+  dogId: string // Changed from FirestoreReference
+  createdAt: Timestamp
+  updatedAt: Timestamp
+  type: "health"
+  eventType: string
+  notes: string
+  severity: number
 }
 
 export const api = {
@@ -100,6 +112,22 @@ export const api = {
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || "Failed to delete dog")
+      }
+      return response.json()
+    },
+  },
+  healthEvents: {
+    create: async (healthEvent: Omit<HealthEvent, "id" | "createdAt" | "updatedAt" | "type">): Promise<HealthEvent> => {
+      const response = await fetch("/api/health-events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(healthEvent),
+      })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to create health event")
       }
       return response.json()
     },
