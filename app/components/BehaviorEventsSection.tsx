@@ -30,8 +30,6 @@ export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectio
   const [error, setError] = useState<string | null>(null)
 
   const fetchBehaviorEvents = useCallback(async () => {
-    if (isLoading) return
-
     setIsLoading(true)
     setError(null)
 
@@ -50,7 +48,7 @@ export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectio
     } finally {
       setIsLoading(false)
     }
-  }, [dogId, showToast])
+  }, [dogId, showToast]) // Removed isLoading from the dependency array
 
   useEffect(() => {
     fetchBehaviorEvents()

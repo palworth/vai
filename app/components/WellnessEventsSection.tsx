@@ -30,8 +30,6 @@ export function WellnessEventsSection({ dogId, showToast }: WellnessEventsSectio
   const [error, setError] = useState<string | null>(null)
 
   const fetchWellnessEvents = useCallback(async () => {
-    if (isLoading) return
-
     setIsLoading(true)
     setError(null)
 
@@ -50,7 +48,7 @@ export function WellnessEventsSection({ dogId, showToast }: WellnessEventsSectio
     } finally {
       setIsLoading(false)
     }
-  }, [dogId, showToast])
+  }, [dogId, showToast]) // Removed isLoading from the dependency array
 
   useEffect(() => {
     fetchWellnessEvents()
