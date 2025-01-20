@@ -34,6 +34,18 @@ export interface HealthEvent {
   severity: number
 }
 
+export interface BehaviorEvent {
+  id: string
+  userId: string
+  dogId: string
+  createdAt: Timestamp
+  updatedAt: Timestamp
+  type: "behavior"
+  eventType: string
+  notes: string
+  severity: number
+}
+
 export const api = {
   dogs: {
     getAll: async (): Promise<Dog[]> => {
@@ -128,6 +140,24 @@ export const api = {
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || "Failed to create health event")
+      }
+      return response.json()
+    },
+  },
+  behaviorEvents: {
+    create: async (
+      behaviorEvent: Omit<BehaviorEvent, "id" | "createdAt" | "updatedAt" | "type">,
+    ): Promise<BehaviorEvent> => {
+      const response = await fetch("/api/behavior-events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(behaviorEvent),
+      })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to create behavior event")
       }
       return response.json()
     },
