@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
+import { use } from "react"
 
 interface ExerciseEvent {
   id: string
@@ -35,7 +36,8 @@ type ActivityType = (typeof ACTIVITY_TYPES)[number]
 const SOURCES = ["Manual Add", "Strava", "Whoop", "Fitbit", "Garmin", "Apple Health"] as const
 type Source = (typeof SOURCES)[number]
 
-export default function ExerciseEventPage({ params }: { params: { id: string } }) {
+export default function ExerciseEventPage({ params }: { params: Promise<{ id: string }> }) {
+  const id = use(params).id
   const [event, setEvent] = useState<ExerciseEvent | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [toastOpen, setToastOpen] = useState(false)
@@ -46,7 +48,7 @@ export default function ExerciseEventPage({ params }: { params: { id: string } }
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const response = await fetch(`/api/exercise-events/${params.id}`)
+        const response = await fetch(`/api/exercise-events/${id}`)
         if (!response.ok) throw new Error("Failed to fetch event")
         const data = await response.json()
         setEvent(data)
@@ -57,14 +59,14 @@ export default function ExerciseEventPage({ params }: { params: { id: string } }
     }
 
     if (user) fetchEvent()
-  }, [user, params.id])
+  }, [user, id])
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!event) return
 
     try {
-      const response = await fetch(`/api/exercise-events/${params.id}`, {
+      const response = await fetch(`/api/exercise-events/${(await params).id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(event),
@@ -83,7 +85,7 @@ export default function ExerciseEventPage({ params }: { params: { id: string } }
     if (!confirm("Are you sure you want to delete this event?")) return
 
     try {
-      const response = await fetch(`/api/exercise-events/${params.id}`, {
+      const response = await fetch(`/api/exercise-events/${(await params).id}`, {
         method: "DELETE",
       })
 

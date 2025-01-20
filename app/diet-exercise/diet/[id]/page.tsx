@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
+import { use } from "react"
 
 interface DietEvent {
   id: string
@@ -22,7 +23,8 @@ interface DietEvent {
 const FOOD_TYPES = ["dry kibble", "homemade", "raw", "custom", "wet"] as const
 type FoodType = (typeof FOOD_TYPES)[number]
 
-export default function DietEventPage({ params }: { params: { id: string } }) {
+export default function DietEventPage({ params }: { params: Promise<{ id: string }> }) {
+  const id = use(params).id
   const [event, setEvent] = useState<DietEvent | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [toastOpen, setToastOpen] = useState(false)
@@ -33,7 +35,7 @@ export default function DietEventPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const response = await fetch(`/api/diet-events/${params.id}`)
+        const response = await fetch(`/api/diet-events/${id}`)
         if (!response.ok) throw new Error("Failed to fetch event")
         const data = await response.json()
         setEvent(data)
@@ -44,14 +46,14 @@ export default function DietEventPage({ params }: { params: { id: string } }) {
     }
 
     if (user) fetchEvent()
-  }, [user, params.id])
+  }, [user, id])
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!event) return
 
     try {
-      const response = await fetch(`/api/diet-events/${params.id}`, {
+      const response = await fetch(`/api/diet-events/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(event),
@@ -70,7 +72,7 @@ export default function DietEventPage({ params }: { params: { id: string } }) {
     if (!confirm("Are you sure you want to delete this event?")) return
 
     try {
-      const response = await fetch(`/api/diet-events/${params.id}`, {
+      const response = await fetch(`/api/diet-events/${id}`, {
         method: "DELETE",
       })
 
