@@ -17,81 +17,80 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { format } from "date-fns"
 import { useRouter } from "next/navigation"
 
-interface BehaviorEvent {
+interface WellnessEvent {
   id: string
   dogId: DocumentReference
   userId: DocumentReference
   eventDate: Date
-  type: "behavior"
-  eventType: string
-  notes: string
+  type: "wellness"
+  mentalState: "depressed" | "anxious" | "lethargic" | "happy" | "loving" | "nervous"
   severity: number
 }
 
-interface BehaviorEventsSectionProps {
+interface WellnessEventsSectionProps {
   dogId: string
   showToast: (title: string, description: string, isError: boolean) => void
 }
 
-export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectionProps) {
+export function WellnessEventsSection({ dogId, showToast }: WellnessEventsSectionProps) {
   const router = useRouter()
-  const [behaviorEvents, setBehaviorEvents] = useState<BehaviorEvent[]>([])
+  const [wellnessEvents, setWellnessEvents] = useState<WellnessEvent[]>([])
 
-  const fetchBehaviorEvents = useCallback(async () => {
+  const fetchWellnessEvents = useCallback(async () => {
     const dogRef = doc(db, "dogs", dogId)
-    const behaviorEventsQuery = query(collection(db, "behaviorEvents"), where("dogId", "==", dogRef))
-    const querySnapshot = await getDocs(behaviorEventsQuery)
+    const wellnessEventsQuery = query(collection(db, "wellnessEvents"), where("dogId", "==", dogRef))
+    const querySnapshot = await getDocs(wellnessEventsQuery)
     const eventsData = querySnapshot.docs.map((doc) => {
       const data = doc.data()
       return {
         id: doc.id,
         ...data,
         eventDate: data.eventDate instanceof Timestamp ? data.eventDate.toDate() : new Date(),
-      } as BehaviorEvent
+      } as WellnessEvent
     })
-    console.log("Fetched behavior events:", eventsData)
-    setBehaviorEvents(eventsData)
+    console.log("Fetched wellness events:", eventsData)
+    setWellnessEvents(eventsData)
   }, [dogId])
 
   useEffect(() => {
-    fetchBehaviorEvents()
-  }, [fetchBehaviorEvents])
+    fetchWellnessEvents()
+  }, [fetchWellnessEvents])
 
-  const handleEditBehaviorEvent = (event: BehaviorEvent) => {
-    router.push(`/behavior/edit?id=${event.id}`)
+  const handleEditWellnessEvent = (event: WellnessEvent) => {
+    router.push(`/health-wellness/wellness/edit?id=${event.id}`)
   }
 
-  const handleDeleteBehaviorEvent = async (eventId: string) => {
+  const handleDeleteWellnessEvent = async (eventId: string) => {
     try {
-      await deleteDoc(doc(db, "behaviorEvents", eventId))
-      fetchBehaviorEvents()
-      showToast("Behavior Event Deleted", "The behavior event has been successfully deleted.", false)
+      await deleteDoc(doc(db, "wellnessEvents", eventId))
+      fetchWellnessEvents()
+      showToast("Wellness Event Deleted", "The wellness event has been successfully deleted.", false)
     } catch (error) {
-      console.error("Error deleting behavior event:", error)
-      showToast("Error", "There was a problem deleting the behavior event.", true)
+      console.error("Error deleting wellness event:", error)
+      showToast("Error", "There was a problem deleting the wellness event.", true)
     }
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Behavior Events</CardTitle>
-        <CardDescription>Manage your dog&apos;s behavior events</CardDescription>
+        <CardTitle>Wellness Events</CardTitle>
+        <CardDescription>Manage your dog&apos;s wellness events</CardDescription>
       </CardHeader>
       <CardContent>
         <Button
           onClick={() => {
-            router.push(`/behavior/add?dogId=${dogId}`)
+            router.push(`/health-wellness/wellness/add?dogId=${dogId}`)
           }}
         >
-          Add Behavior Event
+          Add Wellness Event
         </Button>
 
         <div className="mt-6 space-y-4">
-          {behaviorEvents.map((event) => (
+          {wellnessEvents.map((event) => (
             <Card key={event.id}>
               <CardHeader>
-                <CardTitle>{event.eventType}</CardTitle>
+                <CardTitle>{event.mentalState.charAt(0).toUpperCase() + event.mentalState.slice(1)}</CardTitle>
                 <CardDescription>
                   {event.eventDate ? format(event.eventDate, "MMMM d, yyyy HH:mm") : "No date available"}
                 </CardDescription>
@@ -100,15 +99,12 @@ export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectio
                 <p>
                   <strong>Severity:</strong> {event.severity}/10
                 </p>
-                <p>
-                  <strong>Notes:</strong> {event.notes}
-                </p>
               </CardContent>
               <CardFooter className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => handleEditBehaviorEvent(event)}>
+                <Button variant="outline" onClick={() => handleEditWellnessEvent(event)}>
                   Edit
                 </Button>
-                <Button variant="destructive" onClick={() => handleDeleteBehaviorEvent(event.id)}>
+                <Button variant="destructive" onClick={() => handleDeleteWellnessEvent(event.id)}>
                   Delete
                 </Button>
               </CardFooter>
