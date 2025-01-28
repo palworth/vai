@@ -13,6 +13,7 @@ interface DietEvent {
   dogId: DocumentReference
   userId: DocumentReference
   createdAt: string
+  eventDate: string
   type: "diet"
   foodType: string
   brandName: string
@@ -99,7 +100,7 @@ export function DietEventsSection({ dogId, showToast }: DietEventsSectionProps) 
                 <CardHeader>
                   <CardTitle>{event.foodType}</CardTitle>
                   <CardDescription>
-                    {event.createdAt ? format(new Date(event.createdAt), "MMMM d, yyyy HH:mm") : "No date available"}
+                    {event.eventDate ? format(new Date(event.eventDate), "MMMM d, yyyy HH:mm") : "No date available"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
