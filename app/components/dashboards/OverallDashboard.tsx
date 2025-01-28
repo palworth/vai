@@ -2,18 +2,17 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import ReactECharts from "echarts-for-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/app/contexts/AuthContext"
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
-import { useSearchParams } from "next/navigation"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Dog {
   id: string
   name: string
-  // Add other dog properties as needed
 }
 
 interface DashboardData {
@@ -23,63 +22,24 @@ interface DashboardData {
   wellnessSummary: any[]
 }
 
-const OverallDashboard: React.FC = () => {
+const OverallDashboard: React.FC<{ dogId: string }> = ({ dogId }) => {
   const [data, setData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
   const searchParams = useSearchParams()
 
-  const [dogs, setDogs] = useState<Dog[]>([])
-  const [selectedDogId, setSelectedDogId] = useState<string | null>(null)
-  const [selectedDogName, setSelectedDogName] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchDogs = async () => {
-      if (!user) {
-        console.log("No user found, skipping dog fetch")
-        return
-      }
-      const dogIdFromParams = searchParams.get("dogId")
-      console.log("Dog ID from params:", dogIdFromParams)
-
-      if (dogIdFromParams) {
-        // Fetch the specific dog
-        const dogDoc = await getDoc(doc(db, "dogs", dogIdFromParams))
-        if (dogDoc.exists()) {
-          const dogData = { id: dogDoc.id, ...dogDoc.data() } as Dog
-          console.log("Fetched specific dog:", dogData)
-          setDogs([dogData])
-          setSelectedDogId(dogData.id)
-          setSelectedDogName(dogData.name)
-        } else {
-          console.error("Dog not found for ID:", dogIdFromParams)
-          setError("Dog not found")
-        }
-      } else {
-        // Fetch all dogs for the user
-        const dogsQuery = query(collection(db, "dogs"), where("users", "array-contains", doc(db, "users", user.uid)))
-        const querySnapshot = await getDocs(dogsQuery)
-        const dogsData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Dog)
-        console.log("Fetched dogs for user:", dogsData)
-        setDogs(dogsData)
-      }
-    }
-
-    fetchDogs()
-  }, [user, searchParams])
-
   useEffect(() => {
     async function fetchData() {
-      if (!user || !selectedDogId) {
-        console.log("No user or selected dog, skipping data fetch")
+      if (!user) {
+        console.log("No user found, skipping data fetch")
         setIsLoading(false)
         return
       }
 
       try {
-        console.log("Fetching dashboard data for dog:", selectedDogId)
-        const res = await fetch(`/api/dashboard/overall?userId=${user.uid}&dogId=${selectedDogId}`)
+        console.log("Fetching dashboard data for dog:", dogId)
+        const res = await fetch(`/api/dashboard/overall?userId=${user.uid}&dogId=${dogId}`)
         if (!res.ok) {
           throw new Error(`Failed to fetch dashboard data: ${res.status} ${res.statusText}`)
         }
@@ -94,16 +54,7 @@ const OverallDashboard: React.FC = () => {
       }
     }
     fetchData()
-  }, [user, selectedDogId])
-
-  const handleDogChange = (dogId: string) => {
-    console.log("Dog selection changed to:", dogId)
-    const selectedDog = dogs.find((dog) => dog.id === dogId)
-    if (selectedDog) {
-      setSelectedDogId(selectedDog.id)
-      setSelectedDogName(selectedDog.name)
-    }
-  }
+  }, [user, dogId])
 
   if (isLoading) return <div>Loading...</div>
   if (error) return <div>Error: {error}</div>
@@ -150,31 +101,11 @@ const OverallDashboard: React.FC = () => {
 
   return (
     <div className="dashboard-container space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Dog</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Select onValueChange={handleDogChange} value={selectedDogId || undefined}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a dog" />
-            </SelectTrigger>
-            <SelectContent>
-              {dogs.map((dog) => (
-                <SelectItem key={dog.id} value={dog.id}>
-                  {dog.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-
-      {selectedDogId && data ? (
+      {data ? (
         <>
           <Card>
             <CardHeader>
-              <CardTitle>Overall Health Score for {selectedDogName}</CardTitle>
+              <CardTitle>Overall Health Score</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-4xl font-semibold">{data.totalHealthScore?.toFixed(1) || "N/A"}</p>
@@ -220,7 +151,7 @@ const OverallDashboard: React.FC = () => {
       ) : (
         <Card>
           <CardContent>
-            <p>Please select a dog to view the dashboard.</p>
+            <p>No data available for the selected dog.</p>
           </CardContent>
         </Card>
       )}
