@@ -9,6 +9,7 @@ import {
   deleteDoc,
   addDoc,
   serverTimestamp,
+  Timestamp,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
@@ -37,8 +38,9 @@ export async function GET(request: Request) {
         ...data,
         dogId: data.dogId?.id,
         userId: data.userId?.id,
-        createdAt: data.createdAt?.toDate().toISOString(),
-        updatedAt: data.updatedAt?.toDate().toISOString(),
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
+        eventDate: data.eventDate?.toDate?.()?.toISOString() || data.eventDate || null,
       }
     })
 
@@ -61,11 +63,12 @@ export async function POST(request: Request) {
       userId: userRef,
       createdAt: now,
       updatedAt: now,
-      behaviorType: body.behaviorType, // Changed from eventType to behaviorType
-      notes: body.notes || "", // Allow empty string if notes is not provided
+      eventDate: body.eventDate ? Timestamp.fromDate(new Date(body.eventDate)) : now,
+      behaviorType: body.behaviorType,
+      notes: body.notes || "",
     }
     const docRef = await addDoc(collection(db, "behaviorEvents"), eventData)
-    return NextResponse.json({ id: docRef.id, ...body, createdAt: now, updatedAt: now })
+    return NextResponse.json({ id: docRef.id, ...body, createdAt: now, updatedAt: now, eventDate: eventData.eventDate })
   } catch (error) {
     console.error("Error creating behavior event:", error)
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
@@ -86,6 +89,9 @@ export async function PUT(request: Request) {
     }
 
     updateData.updatedAt = serverTimestamp()
+    if (updateData.eventDate) {
+      updateData.eventDate = Timestamp.fromDate(new Date(updateData.eventDate))
+    }
 
     await updateDoc(docRef, updateData)
     return NextResponse.json({ message: "Event updated successfully" })

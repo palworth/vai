@@ -17,6 +17,7 @@ interface BehaviorEvent {
   behaviorType: string
   severity: number
   notes?: string
+  eventDate: string
   createdAt?: Date
   updatedAt?: Date
 }
@@ -36,6 +37,7 @@ export function BehaviorEventForm({ dogId, userId, event, onSuccess, onCancel }:
     behaviorType: event?.behaviorType || "",
     severity: event?.severity || 1,
     notes: event?.notes || "",
+    eventDate: event?.eventDate || format(new Date(), "yyyy-MM-dd'T'HH:mm"),
   })
   const [isCustomBehavior, setIsCustomBehavior] = useState(false)
   const [customBehaviorType, setCustomBehaviorType] = useState("")
@@ -52,6 +54,7 @@ export function BehaviorEventForm({ dogId, userId, event, onSuccess, onCancel }:
         behaviorType: isCustom ? "custom" : event.behaviorType,
         severity: event.severity,
         notes: event.notes || "",
+        eventDate: event.eventDate,
       })
       setIsCustomBehavior(isCustom)
       setCustomBehaviorType(isCustom ? event.behaviorType : "")
@@ -141,6 +144,17 @@ export function BehaviorEventForm({ dogId, userId, event, onSuccess, onCancel }:
           max={10}
           value={behaviorEvent.severity}
           onChange={(e) => setBehaviorEvent({ ...behaviorEvent, severity: Number.parseInt(e.target.value, 10) })}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="eventDate">Event Date</Label>
+        <Input
+          id="eventDate"
+          type="datetime-local"
+          value={behaviorEvent.eventDate}
+          onChange={(e) => setBehaviorEvent({ ...behaviorEvent, eventDate: e.target.value })}
           required
         />
       </div>

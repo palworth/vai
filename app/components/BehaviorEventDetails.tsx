@@ -22,6 +22,7 @@ interface BehaviorEvent {
   behaviorType: string
   notes: string
   severity: number
+  eventDate: string
   createdAt: string | Timestamp
 }
 
@@ -64,12 +65,19 @@ export function BehaviorEventDetails({ id }: { id: string }) {
     if (!event) return
 
     try {
+      const updateData = {
+        behaviorType: event.behaviorType,
+        severity: event.severity,
+        notes: event.notes,
+        eventDate: event.eventDate,
+      }
+
       const res = await fetch(`/api/behavior-events/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(event),
+        body: JSON.stringify(updateData),
       })
       if (!res.ok) {
         throw new Error("Failed to update behavior event")
@@ -101,26 +109,12 @@ export function BehaviorEventDetails({ id }: { id: string }) {
   }
 
   // Helper function to format the event date
-  function formatEventDate(createdAt: string | Timestamp) {
-    if (!createdAt) {
+  function formatEventDate(date: string) {
+    if (!date) {
       return "No date available"
     }
 
-    // If it's an object with `seconds` and `nanoseconds`, treat it as a Firestore Timestamp
-    if (typeof createdAt === "object" && "seconds" in createdAt) {
-      const date = new Date(createdAt.seconds * 1000 + (createdAt.nanoseconds || 0) / 1000000)
-      if (isNaN(date.getTime())) {
-        return "No date available"
-      }
-      return format(date, "MMMM d, yyyy HH:mm")
-    } else {
-      // Otherwise, assume it's a date string
-      const date = new Date(createdAt)
-      if (isNaN(date.getTime())) {
-        return "No date available"
-      }
-      return format(date, "MMMM d, yyyy HH:mm")
-    }
+    return format(new Date(date), "MMMM d, yyyy HH:mm")
   }
 
   if (isLoading) return <div>Loading...</div>
@@ -166,6 +160,19 @@ export function BehaviorEventDetails({ id }: { id: string }) {
                 )}
               </div>
               <div className="space-y-2">
+                <Label htmlFor="eventDate">Event Date</Label>
+                {isEditing ? (
+                  <Input
+                    id="eventDate"
+                    type="datetime-local"
+                    value={event.eventDate}
+                    onChange={(e) => setEvent({ ...event, eventDate: e.target.value })}
+                  />
+                ) : (
+                  <p>{formatEventDate(event.eventDate)}</p>
+                )}
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="notes">Notes</Label>
                 {isEditing ? (
                   <Textarea
@@ -179,8 +186,8 @@ export function BehaviorEventDetails({ id }: { id: string }) {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="createdAt">Date</Label>
-                <p>{formatEventDate(event.createdAt)}</p>
+                <Label htmlFor="createdAt">Created At</Label>
+                <p>{formatEventDate(event.createdAt as string)}</p>
               </div>
               {isEditing ? (
                 <div className="flex justify-end space-x-2">
@@ -222,3 +229,4 @@ export function BehaviorEventDetails({ id }: { id: string }) {
     </ToastProvider>
   )
 }
+

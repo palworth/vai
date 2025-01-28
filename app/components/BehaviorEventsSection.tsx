@@ -17,6 +17,7 @@ interface BehaviorEvent {
   behaviorType: string // Changed from eventType to behaviorType
   notes: string
   severity: number
+  eventDate: string
 }
 
 interface BehaviorEventsSectionProps {
@@ -99,7 +100,7 @@ export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectio
                 <CardHeader>
                   <CardTitle>{event.behaviorType}</CardTitle>
                   <CardDescription>
-                    {event.createdAt ? format(new Date(event.createdAt), "MMMM d, yyyy HH:mm") : "No date available"}
+                    {event.eventDate ? format(new Date(event.eventDate), "MMMM d, yyyy HH:mm") : "No date available"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -110,8 +111,8 @@ export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectio
                     <strong>Notes:</strong> {event.notes || "No notes provided"}
                   </p>
                   <p>
-                    <strong>Last Updated:</strong>{" "}
-                    {event.updatedAt ? format(new Date(event.updatedAt), "MMMM d, yyyy HH:mm") : "N/A"}
+                    <strong>Event Date:</strong>{" "}
+                    {event.eventDate ? format(new Date(event.eventDate), "MMMM d, yyyy HH:mm") : "N/A"}
                   </p>
                 </CardContent>
                 <CardFooter className="flex justify-end space-x-2">
