@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 
 interface Timestamp {
   seconds: number
@@ -50,6 +50,7 @@ export function BehaviorEventDetails({ id }: { id: string }) {
         }
         const data = await res.json()
         setEvent(data)
+        console.log("dogId:", data.dogId) // Log the dogId
       } catch (error) {
         console.error("Error fetching behavior event:", error)
         setError("Failed to load behavior event. Please try again.")
@@ -85,6 +86,11 @@ export function BehaviorEventDetails({ id }: { id: string }) {
       setToastMessage({ title: "Success!", description: "Behavior event updated successfully", isError: false })
       setToastOpen(true)
       setIsEditing(false)
+
+      // Add a slight delay before redirecting
+      setTimeout(() => {
+        router.push(`/dogs/${event.dogId}`)
+      }, 1500) // 1.5 seconds delay
     } catch (error) {
       setToastMessage({ title: "Error!", description: "Failed to update behavior event", isError: true })
       setToastOpen(true)
@@ -113,8 +119,15 @@ export function BehaviorEventDetails({ id }: { id: string }) {
     if (!date) {
       return "No date available"
     }
+    return format(parseISO(date), "MMMM d, yyyy HH:mm")
+  }
 
-    return format(new Date(date), "MMMM d, yyyy HH:mm")
+  // Helper function to format the date for the datetime-local input
+  function formatDateForInput(date: string) {
+    if (!date) {
+      return ""
+    }
+    return format(parseISO(date), "yyyy-MM-dd'T'HH:mm")
   }
 
   if (isLoading) return <div>Loading...</div>
@@ -165,7 +178,7 @@ export function BehaviorEventDetails({ id }: { id: string }) {
                   <Input
                     id="eventDate"
                     type="datetime-local"
-                    value={event.eventDate}
+                    value={formatDateForInput(event.eventDate)}
                     onChange={(e) => setEvent({ ...event, eventDate: e.target.value })}
                   />
                 ) : (

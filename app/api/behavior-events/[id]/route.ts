@@ -13,6 +13,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({
         id: docSnap.id,
         ...data,
+        dogId: data.dogId?.id || data.dogId, // Convert dogId reference to ID string
+        userId: data.userId?.id || data.userId, // Also convert userId for consistency
         eventDate: data.eventDate?.toDate?.()?.toISOString() || data.eventDate || null,
         createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
         updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
