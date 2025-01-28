@@ -11,9 +11,10 @@ interface BehaviorEvent {
   id: string
   dogId: string
   userId: string
-  eventDate: string
+  createdAt: string
+  updatedAt: string
   type: "behavior"
-  eventType: string
+  behaviorType: string // Changed from eventType to behaviorType
   notes: string
   severity: number
 }
@@ -48,7 +49,7 @@ export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectio
     } finally {
       setIsLoading(false)
     }
-  }, [dogId, showToast]) // Removed isLoading from the dependency array
+  }, [dogId, showToast])
 
   useEffect(() => {
     fetchBehaviorEvents()
@@ -96,9 +97,9 @@ export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectio
             {behaviorEvents.map((event) => (
               <Card key={event.id}>
                 <CardHeader>
-                  <CardTitle>{event.eventType}</CardTitle>
+                  <CardTitle>{event.behaviorType}</CardTitle>
                   <CardDescription>
-                    {event.eventDate ? format(new Date(event.eventDate), "MMMM d, yyyy HH:mm") : "No date available"}
+                    {event.createdAt ? format(new Date(event.createdAt), "MMMM d, yyyy HH:mm") : "No date available"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -106,7 +107,11 @@ export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectio
                     <strong>Severity:</strong> {event.severity}/10
                   </p>
                   <p>
-                    <strong>Notes:</strong> {event.notes}
+                    <strong>Notes:</strong> {event.notes || "No notes provided"}
+                  </p>
+                  <p>
+                    <strong>Last Updated:</strong>{" "}
+                    {event.updatedAt ? format(new Date(event.updatedAt), "MMMM d, yyyy HH:mm") : "N/A"}
                   </p>
                 </CardContent>
                 <CardFooter className="flex justify-end space-x-2">

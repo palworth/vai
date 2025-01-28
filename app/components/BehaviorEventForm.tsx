@@ -1,60 +1,60 @@
-'use client'
+"use client"
 
-import { useState, useEffect, useMemo } from 'react'
-import { addDoc, collection, doc, updateDoc, Timestamp } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { useState, useEffect, useMemo } from "react"
+import { addDoc, collection, doc, updateDoc, serverTimestamp } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { format } from 'date-fns'
+import { format } from "date-fns"
 
 interface BehaviorEvent {
   id?: string
   dogId: string
-  dateTime: Date
+  userId: string
   behaviorType: string
-  severityLevel: 'mild' | 'moderate' | 'severe'
-  notes: string
+  severity: number
+  notes?: string
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 interface BehaviorEventFormProps {
   dogId: string
+  userId: string
   event?: BehaviorEvent
   onSuccess: () => void
   onCancel: () => void
 }
 
-export function BehaviorEventForm({ dogId, event, onSuccess, onCancel }: BehaviorEventFormProps) {
-  const [behaviorEvent, setBehaviorEvent] = useState<Omit<BehaviorEvent, 'id' | 'dogId'>>({
-    dateTime: event?.dateTime || new Date(),
-    behaviorType: event?.behaviorType || '',
-    severityLevel: event?.severityLevel || 'mild',
-    notes: event?.notes || ''
+export function BehaviorEventForm({ dogId, userId, event, onSuccess, onCancel }: BehaviorEventFormProps) {
+  const [behaviorEvent, setBehaviorEvent] = useState<
+    Omit<BehaviorEvent, "id" | "dogId" | "userId" | "createdAt" | "updatedAt">
+  >({
+    behaviorType: event?.behaviorType || "",
+    severity: event?.severity || 1,
+    notes: event?.notes || "",
   })
   const [isCustomBehavior, setIsCustomBehavior] = useState(false)
-  const [customBehaviorType, setCustomBehaviorType] = useState('')
+  const [customBehaviorType, setCustomBehaviorType] = useState("")
 
-  const behaviorTypes = useMemo(() => [
-    "Excessive Barking",
-    "Chewing",
-    "Anxiety Attack",
-    "Aggression",
-    "Disobedience"
-  ], [])
+  const behaviorTypes = useMemo(
+    () => ["Excessive Barking", "Chewing", "Anxiety Attack", "Aggression", "Disobedience"],
+    [],
+  )
 
   useEffect(() => {
     if (event) {
-      const isCustom = !behaviorTypes.includes(event.behaviorType);
+      const isCustom = !behaviorTypes.includes(event.behaviorType)
       setBehaviorEvent({
-        dateTime: new Date(event.dateTime),
-        behaviorType: isCustom ? 'custom' : event.behaviorType,
-        severityLevel: event.severityLevel,
-        notes: event.notes
-      });
-      setIsCustomBehavior(isCustom);
-      setCustomBehaviorType(isCustom ? event.behaviorType : '');
+        behaviorType: isCustom ? "custom" : event.behaviorType,
+        severity: event.severity,
+        notes: event.notes || "",
+      })
+      setIsCustomBehavior(isCustom)
+      setCustomBehaviorType(isCustom ? event.behaviorType : "")
     }
   }, [event, behaviorTypes])
 
@@ -64,7 +64,7 @@ export function BehaviorEventForm({ dogId, event, onSuccess, onCancel }: Behavio
     const finalBehaviorType = isCustomBehavior ? customBehaviorType : behaviorEvent.behaviorType
 
     if (!finalBehaviorType) {
-      alert('Please select or add a behavior type')
+      alert("Please select or add a behavior type")
       return
     }
 
@@ -72,22 +72,25 @@ export function BehaviorEventForm({ dogId, event, onSuccess, onCancel }: Behavio
       const eventData = {
         ...behaviorEvent,
         behaviorType: finalBehaviorType,
-        dateTime: Timestamp.fromDate(behaviorEvent.dateTime)
       }
 
       if (event?.id) {
-        // For updates, we don't need to include the dogId
-        await updateDoc(doc(db, 'behaviorEvents', event.id), eventData)
-      } else {
-        // For new events, we include the dogId
-        await addDoc(collection(db, 'behaviorEvents'), {
+        await updateDoc(doc(db, "behaviorEvents", event.id), {
           ...eventData,
-          dogId: doc(db, 'dogs', dogId)
+          updatedAt: serverTimestamp(),
+        })
+      } else {
+        await addDoc(collection(db, "behaviorEvents"), {
+          ...eventData,
+          dogId: doc(db, "dogs", dogId),
+          userId: doc(db, "users", userId),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         })
       }
       onSuccess()
     } catch (error) {
-      console.error('Error saving behavior event:', error)
+      console.error("Error saving behavior event:", error)
     }
   }
 
@@ -95,18 +98,11 @@ export function BehaviorEventForm({ dogId, event, onSuccess, onCancel }: Behavio
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="behaviorType">Behavior Type</Label>
-        <Select 
-          value={isCustomBehavior ? 'custom' : behaviorEvent.behaviorType} 
+        <Select
+          value={behaviorEvent.behaviorType}
           onValueChange={(value) => {
-            if (value === 'custom') {
-              setIsCustomBehavior(true);
-              setBehaviorEvent({ ...behaviorEvent, behaviorType: '' }); 
-              setCustomBehaviorType(''); 
-            } else {
-              setIsCustomBehavior(false);
-              setBehaviorEvent({ ...behaviorEvent, behaviorType: value });
-              setCustomBehaviorType('');
-            }
+            setBehaviorEvent({ ...behaviorEvent, behaviorType: value })
+            setIsCustomBehavior(value === "custom")
           }}
         >
           <SelectTrigger>
@@ -114,68 +110,64 @@ export function BehaviorEventForm({ dogId, event, onSuccess, onCancel }: Behavio
           </SelectTrigger>
           <SelectContent>
             {behaviorTypes.map((type) => (
-              <SelectItem key={type} value={type}>{type}</SelectItem>
+              <SelectItem key={type} value={type}>
+                {type}
+              </SelectItem>
             ))}
-            <SelectItem value="custom">Behavior not listed? Click here to add</SelectItem>
+            <SelectItem value="custom">Custom</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
       {isCustomBehavior && (
         <div className="space-y-2">
           <Label htmlFor="customBehaviorType">Custom Behavior Type</Label>
           <Input
             id="customBehaviorType"
             value={customBehaviorType}
-            onChange={(e) => {
-              const value = e.target.value.slice(0, 100);
-              setCustomBehaviorType(value);
-              setBehaviorEvent({ ...behaviorEvent, behaviorType: value });
-            }}
-            maxLength={100}
-            placeholder="Enter custom behavior type (max 100 characters)"
+            onChange={(e) => setCustomBehaviorType(e.target.value)}
+            placeholder="Enter custom behavior type"
             required
           />
-          <p className="text-sm text-gray-500">{customBehaviorType.length}/100 characters</p>
         </div>
       )}
+
       <div className="space-y-2">
-        <Label htmlFor="dateTime">Date and Time</Label>
+        <Label htmlFor="severity">Severity (1-10)</Label>
         <Input
-          id="dateTime"
-          type="datetime-local"
-          value={format(behaviorEvent.dateTime, "yyyy-MM-dd'T'HH:mm")}
-          onChange={(e) => setBehaviorEvent({ ...behaviorEvent, dateTime: new Date(e.target.value) })}
+          id="severity"
+          type="number"
+          min={1}
+          max={10}
+          value={behaviorEvent.severity}
+          onChange={(e) => setBehaviorEvent({ ...behaviorEvent, severity: Number.parseInt(e.target.value, 10) })}
           required
         />
       </div>
+
       <div className="space-y-2">
-        <Label htmlFor="severityLevel">Severity Level</Label>
-        <Select 
-          value={behaviorEvent.severityLevel} 
-          onValueChange={(value) => setBehaviorEvent({ ...behaviorEvent, severityLevel: value as 'mild' | 'moderate' | 'severe' })}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select severity level" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="mild">Mild</SelectItem>
-            <SelectItem value="moderate">Moderate</SelectItem>
-            <SelectItem value="severe">Severe</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="notes">Notes</Label>
+        <Label htmlFor="notes">Notes (Optional)</Label>
         <Textarea
           id="notes"
           value={behaviorEvent.notes}
           onChange={(e) => setBehaviorEvent({ ...behaviorEvent, notes: e.target.value })}
-          required
+          placeholder="Optional: Add any additional notes"
+          rows={4}
         />
       </div>
+
+      {event && (
+        <div className="space-y-2">
+          <Label>Created At</Label>
+          <p>{event.createdAt ? format(event.createdAt, "MMMM d, yyyy HH:mm:ss") : "N/A"}</p>
+        </div>
+      )}
+
       <div className="flex justify-end space-x-2">
-        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button type="submit">{event?.id ? 'Update' : 'Add'} Behavior Event</Button>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">{event?.id ? "Update" : "Add"} Behavior Event</Button>
       </div>
     </form>
   )

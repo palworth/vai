@@ -5,16 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { api, type Dog } from "@/lib/api"
 import { useAuth } from "@/app/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
-
-const eventTypes = ["Barking", "Chewing", "Digging", "Jumping", "Whining", "Aggression", "Fear"]
+import { BehaviorEventForm } from "@/app/components/BehaviorEventForm"
 
 export default function AddBehaviorEventPage() {
   const router = useRouter()
@@ -23,10 +20,6 @@ export default function AddBehaviorEventPage() {
   const [dogs, setDogs] = useState<Dog[]>([])
   const [selectedDogId, setSelectedDogId] = useState<string | null>(null)
   const [selectedDogName, setSelectedDogName] = useState<string | null>(null)
-  const [eventType, setEventType] = useState("")
-  const [notes, setNotes] = useState("")
-  const [severity, setSeverity] = useState<number>(1)
-  const [eventDate, setEventDate] = useState<string>(new Date().toISOString().slice(0, 16))
   const [isLoading, setIsLoading] = useState(false)
   const [toastOpen, setToastOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState({ title: "", description: "", isError: false })
@@ -59,46 +52,20 @@ export default function AddBehaviorEventPage() {
     fetchDogs()
   }, [user, searchParams])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    if (!user || !selectedDogId) {
-      showToast("Error", "Please select a dog and ensure you're logged in", true)
-      setIsLoading(false)
-      return
-    }
-
-    try {
-      const behaviorEventData = {
-        userId: user.uid,
-        dogId: selectedDogId,
-        eventType,
-        notes,
-        severity,
-        eventDate: new Date(eventDate),
-      }
-
-      await api.behaviorEvents.create(behaviorEventData)
-      showToast("Success", "Behavior event added successfully", false)
-      setTimeout(() => {
-        router.push(`/dogs/${selectedDogId}`)
-      }, 2000)
-    } catch (error) {
-      console.error("Error adding behavior event:", error)
-      showToast(
-        "Error",
-        `Failed to add behavior event: ${error instanceof Error ? error.message : "Unknown error"}`,
-        true,
-      )
-    } finally {
-      setIsLoading(false)
-    }
+  const handleSuccess = () => {
+    showToast("Success", "Behavior event added successfully", false)
+    setTimeout(() => {
+      router.push(`/dogs/${selectedDogId}`)
+    }, 2000)
   }
 
   const showToast = (title: string, description: string, isError: boolean) => {
     setToastMessage({ title, description, isError })
     setToastOpen(true)
+  }
+
+  if (!user) {
+    return <div>Please log in to add a behavior event.</div>
   }
 
   return (
@@ -110,85 +77,36 @@ export default function AddBehaviorEventPage() {
             <CardDescription>Record a new behavior event for your dog</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {selectedDogName ? (
-                <div className="space-y-2">
-                  <Label>Selected Dog</Label>
-                  <p className="text-lg font-medium">{selectedDogName}</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Label htmlFor="dogSelect">Select Dog</Label>
-                  <Select value={selectedDogId || ""} onValueChange={(value) => setSelectedDogId(value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a dog" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {dogs.map((dog) => (
-                        <SelectItem key={dog.id} value={dog.id}>
-                          {dog.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="eventDate">Event Date and Time</Label>
-                <Input
-                  id="eventDate"
-                  type="datetime-local"
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                  required
-                />
+            {selectedDogName ? (
+              <div className="space-y-2 mb-4">
+                <Label>Selected Dog</Label>
+                <p className="text-lg font-medium">{selectedDogName}</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="eventType">Event Type</Label>
-                <Select value={eventType} onValueChange={(value) => setEventType(value)}>
+            ) : (
+              <div className="space-y-2 mb-4">
+                <Label htmlFor="dogSelect">Select Dog</Label>
+                <Select value={selectedDogId || ""} onValueChange={(value) => setSelectedDogId(value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select event type" />
+                    <SelectValue placeholder="Select a dog" />
                   </SelectTrigger>
                   <SelectContent>
-                    {eventTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
+                    {dogs.map((dog) => (
+                      <SelectItem key={dog.id} value={dog.id}>
+                        {dog.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Describe the behavior event..."
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="severity">Severity (1-10)</Label>
-                <Input
-                  id="severity"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={severity}
-                  onChange={(e) => setSeverity(Number(e.target.value))}
-                  required
-                />
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Adding..." : "Add Behavior Event"}
-                </Button>
-              </div>
-            </form>
+            )}
+            {selectedDogId && (
+              <BehaviorEventForm
+                dogId={selectedDogId}
+                userId={user.uid}
+                onSuccess={handleSuccess}
+                onCancel={() => router.back()}
+              />
+            )}
           </CardContent>
         </Card>
       </div>

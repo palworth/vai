@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore"
+import { doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -9,7 +9,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const docSnap = await getDoc(docRef)
 
     if (docSnap.exists()) {
-      return NextResponse.json(docSnap.data())
+      const data = docSnap.data()
+      return NextResponse.json({
+        id: docSnap.id,
+        ...data,
+        eventDate: data.eventDate?.toDate().toISOString(),
+      })
     } else {
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
@@ -24,7 +29,18 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { id } = await params
     const body = await request.json()
     const docRef = doc(db, "behaviorEvents", id)
-    await updateDoc(docRef, body)
+
+    // Extract only the fields we want to update
+    const { behaviorType, severity, notes } = body
+
+    const updateData = {
+      behaviorType,
+      severity,
+      notes,
+      updatedAt: serverTimestamp(),
+    }
+
+    await updateDoc(docRef, updateData)
     return NextResponse.json({ message: "Event updated successfully" })
   } catch (error) {
     console.error("Error updating behavior event:", error)

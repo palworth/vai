@@ -4,4 +4,3 @@ export default async function BehaviorEventPage({ params }: { params: Promise<{ 
   const { id } = await params
   return <BehaviorEventDetails id={id} />
 }
-
