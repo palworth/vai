@@ -8,6 +8,8 @@ export default function Home() {
         { title: 'Health & Wellness', href: '/health-wellness', description: 'Monitor health events and mental wellness' },
         { title: 'Diet & Exercise', href: '/diet-exercise', description: 'Manage your dog\'s nutrition and activity' },
         { title: 'Behavior', href: '/behavior', description: 'Track and improve your dog\'s behavior' },
+        { title: 'Dogs', href: '/dogs', description: 'View and manage your dogs' },
+        { title: 'Dashboards', href: '/dashboards', description: 'Access overall health and diet dashboards' },
       ].map((box) => (
         <Link
           key={box.title}
@@ -23,4 +25,3 @@ export default function Home() {
     </div>
   )
 }
-
