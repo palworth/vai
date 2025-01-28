@@ -2,32 +2,41 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
 import ReactECharts from "echarts-for-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/app/contexts/AuthContext"
-import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
-interface Dog {
-  id: string
-  name: string
-}
 
 interface DashboardData {
   totalHealthScore: number
-  activitySummary: any[]
-  dietSummary: any[]
-  wellnessSummary: any[]
+  activitySummary: ActivityEvent[]
+  dietSummary: DietEvent[]
+  wellnessSummary: WellnessEvent[]
 }
+
+interface ActivityEvent {
+    eventDate: string;
+    type: string; // e.g., "exercise"
+    duration: number; // Duration in minutes
+  }
+  
+  interface DietEvent {
+    eventDate: string;
+    type: string; // e.g., "diet"
+    quantity: number; // Quantity of food
+    foodType: string; // Type of food
+  }
+  
+  interface WellnessEvent {
+    eventDate: string;
+    type: string; // e.g., "wellness"
+    severity: number; // Severity of the wellness issue
+  }
 
 const OverallDashboard: React.FC<{ dogId: string }> = ({ dogId }) => {
   const [data, setData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
-  const searchParams = useSearchParams()
 
   useEffect(() => {
     async function fetchData() {
@@ -160,16 +169,19 @@ const OverallDashboard: React.FC<{ dogId: string }> = ({ dogId }) => {
 }
 
 // Helper function to calculate health score (you may want to adjust this based on your specific requirements)
-function calculateHealthScore(item: any): number {
-  if (item.type === "exercise") {
-    return Math.min((item.duration / 60) * 10, 100) // 1 hour of exercise = 100 score
-  } else if (item.type === "diet") {
-    return item.quantity > 0 ? 80 : 0 // Simplistic approach, adjust as needed
-  } else if (item.type === "wellness") {
-    return 100 - item.severity * 10 // Invert severity for wellness score
+function calculateHealthScore(item: ActivityEvent | DietEvent | WellnessEvent): number {
+    if ('duration' in item) {
+      // This is an ActivityEvent
+      return Math.min((item.duration / 60) * 10, 100); // Example logic
+    } else if ('quantity' in item) {
+      // This is a DietEvent
+      return item.quantity > 0 ? 80 : 0; // Example logic
+    } else if ('severity' in item) {
+      // This is a WellnessEvent
+      return 100 - item.severity * 10; // Example logic
+    }
+    return 50; // Default score
   }
-  return 50 // Default score
-}
 
 export default OverallDashboard
 
