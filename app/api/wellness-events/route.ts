@@ -10,6 +10,7 @@ import {
   where,
   getDocs,
   deleteDoc,
+  serverTimestamp,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
   try {
     const data = await req.json()
 
-    // Validate required fields
+    // Required fields
     const requiredFields = ["userId", "dogId", "mentalState", "severity", "eventDate"]
     for (const field of requiredFields) {
       if (!data[field]) {
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Severity must be a number between 1 and 10" }, { status: 400 })
     }
 
-    const now = Timestamp.now()
+    const now = serverTimestamp()
 
     const wellnessEventData = {
       userId: doc(db, "users", data.userId),
@@ -46,13 +47,15 @@ export async function POST(req: NextRequest) {
       type: "wellness",
       mentalState: data.mentalState,
       severity: data.severity,
+      // notes is optional
       notes: data.notes || "",
       eventDate: Timestamp.fromDate(new Date(data.eventDate)),
     }
 
+    // Create doc
     const docRef = await addDoc(collection(db, "wellnessEvents"), wellnessEventData)
 
-    // Add the wellness event reference to the dog's wellnessEventIds array
+    // Add to dog's wellnessEventIds array
     await updateDoc(doc(db, "dogs", data.dogId), {
       wellnessEventIds: arrayUnion(docRef),
     })
@@ -60,6 +63,7 @@ export async function POST(req: NextRequest) {
     const newWellnessEvent = {
       id: docRef.id,
       ...wellnessEventData,
+      // Convert references back
       userId: data.userId,
       dogId: data.dogId,
       eventDate: data.eventDate,
@@ -72,6 +76,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// GET /api/wellness?dogId=XXXX
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const dogId = searchParams.get("dogId")
@@ -85,16 +90,19 @@ export async function GET(request: NextRequest) {
     const wellnessEventsQuery = query(collection(db, "wellnessEvents"), where("dogId", "==", dogRef))
     const querySnapshot = await getDocs(wellnessEventsQuery)
 
-    const events = querySnapshot.docs.map((doc) => {
-      const data = doc.data()
+    const events = querySnapshot.docs.map((docSnap) => {
+      const data = docSnap.data()
       return {
-        id: doc.id,
+        id: docSnap.id,
         ...data,
-        userId: data.userId.id,
-        dogId: data.dogId.id,
-        eventDate: data.eventDate instanceof Timestamp ? data.eventDate.toDate().toISOString() : null,
-        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : null,
-        updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toISOString() : null,
+        userId: data.userId?.id,
+        dogId: data.dogId?.id,
+        eventDate:
+          data.eventDate instanceof Timestamp ? data.eventDate.toDate().toISOString() : null,
+        createdAt:
+          data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : null,
+        updatedAt:
+          data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toISOString() : null,
       }
     })
 
@@ -105,6 +113,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// DELETE /api/wellness?id=XXXX
 export async function DELETE(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const id = searchParams.get("id")
@@ -122,4 +131,3 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
-
