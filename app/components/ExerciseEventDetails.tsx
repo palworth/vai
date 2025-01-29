@@ -2,25 +2,25 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/app/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
+import { format, parseISO } from "date-fns"
 
 interface ExerciseEvent {
   id: string
   dogId: string
+  userId?: string
   activityType: string
   duration: number
   distance: number
   source: string
-  createdAt: {
-    seconds: number
-    nanoseconds: number
-  }
+  eventDate?: string // We'll add eventDate if we want to edit it
+  createdAt?: string
+  updatedAt?: string
 }
 
 const ACTIVITY_TYPES = [
@@ -39,94 +39,109 @@ const SOURCES = ["Manual Add", "Strava", "Whoop", "Fitbit", "Garmin", "Apple Hea
 type Source = (typeof SOURCES)[number]
 
 export function ExerciseEventDetails({ id }: { id: string }) {
+  const router = useRouter()
   const [event, setEvent] = useState<ExerciseEvent | null>(null)
   const [isEditing, setIsEditing] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   const [toastOpen, setToastOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState({ title: "", description: "", isError: false })
-  const router = useRouter()
-  const { user } = useAuth()
 
   useEffect(() => {
-    const fetchEvent = async () => {
+    async function fetchEvent() {
+      setIsLoading(true)
       try {
         const response = await fetch(`/api/exercise-events/${id}`)
         if (!response.ok) throw new Error("Failed to fetch event")
         const data = await response.json()
-        console.log("Fetched event data:", data)
-        setEvent(data)
-      } catch (error) {
-        console.error("Error fetching event:", error)
-        showToast("Error", "Failed to fetch event details", true)
+
+        // If we want to let user edit the event date, parse it if present
+        setEvent({
+          ...data,
+          eventDate: data.eventDate ?? "",
+        })
+      } catch (err) {
+        console.error("Error fetching exercise event:", err)
+        setError("Failed to load exercise event. Please try again.")
+      } finally {
+        setIsLoading(false)
       }
     }
+    fetchEvent()
+  }, [id])
 
-    if (user) fetchEvent()
-  }, [user, id])
+  function showToast(title: string, description: string, isError = false) {
+    setToastMessage({ title, description, isError })
+    setToastOpen(true)
+  }
 
-  const handleUpdate = async (e: React.FormEvent) => {
+  async function handleUpdate(e: React.FormEvent) {
     e.preventDefault()
     if (!event) return
 
     try {
+      const body = {
+        activityType: event.activityType,
+        duration: event.duration,
+        distance: event.distance,
+        source: event.source,
+        eventDate: event.eventDate, // an ISO string
+      }
+
       const response = await fetch(`/api/exercise-events/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          activityType: event.activityType,
-          duration: event.duration,
-          distance: event.distance,
-          source: event.source,
-        }),
+        body: JSON.stringify(body),
       })
 
       if (!response.ok) throw new Error("Failed to update event")
-      showToast("Success", "Event updated successfully", false)
+      showToast("Success", "Event updated successfully")
       setIsEditing(false)
-    } catch (error) {
-      console.error("Error updating event:", error)
+
+      setTimeout(() => {
+        router.push(`/dogs/${event.dogId}`)
+      }, 1500)
+    } catch (err) {
+      console.error("Error updating event:", err)
       showToast("Error", "Failed to update event", true)
     }
   }
 
-  const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this event?")) return
+  async function handleDelete() {
+    if (!event) return
 
     try {
       const response = await fetch(`/api/exercise-events/${id}`, {
         method: "DELETE",
       })
-
       if (!response.ok) throw new Error("Failed to delete event")
-      showToast("Success", "Event deleted successfully", false)
-      setTimeout(() => router.push("/diet-exercise"), 2000)
-    } catch (error) {
-      console.error("Error deleting event:", error)
+
+      showToast("Success", "Event deleted successfully")
+      router.push(`/dogs/${event.dogId}`)
+    } catch (err) {
+      console.error("Error deleting event:", err)
       showToast("Error", "Failed to delete event", true)
     }
   }
 
-  const showToast = (title: string, description: string, isError: boolean) => {
-    setToastMessage({ title, description, isError })
-    setToastOpen(true)
+  function formatDisplayDate(dateStr?: string) {
+    if (!dateStr) return "No date available"
+    const date = parseISO(dateStr)
+    if (isNaN(date.getTime())) return "No date available"
+    return format(date, "MMMM d, yyyy HH:mm")
   }
 
-  const formatDate = (timestamp: { seconds: number; nanoseconds: number }) => {
-    if (!timestamp || !timestamp.seconds) {
-      return "No date available"
-    }
-    const date = new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000)
-    return date.toLocaleString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      timeZoneName: "short",
-    })
+  function formatDateForInput(dateStr?: string) {
+    if (!dateStr) return ""
+    const date = parseISO(dateStr)
+    if (isNaN(date.getTime())) return ""
+    return format(date, "yyyy-MM-dd'T'HH:mm")
   }
 
-  if (!event) return <div>Loading...</div>
+  if (isLoading) return <div>Loading...</div>
+  if (error) return <div>Error: {error}</div>
+  if (!event) return <div>No event found</div>
 
   return (
     <ToastProvider>
@@ -140,71 +155,103 @@ export function ExerciseEventDetails({ id }: { id: string }) {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleUpdate} className="space-y-4">
+              {/* Activity Type */}
               <div className="space-y-2">
                 <Label htmlFor="activityType">Activity Type</Label>
-                <Select
-                  value={event.activityType}
-                  onValueChange={(value: ActivityType) => setEvent({ ...event, activityType: value })}
-                  disabled={!isEditing}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select activity type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ACTIVITY_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {isEditing ? (
+                  <Select
+                    value={event.activityType}
+                    onValueChange={(value: ActivityType) =>
+                      setEvent({ ...event, activityType: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select activity type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ACTIVITY_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p>{event.activityType}</p>
+                )}
               </div>
+
+              {/* Duration */}
               <div className="space-y-2">
                 <Label htmlFor="duration">Duration (minutes)</Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  value={event.duration}
-                  onChange={(e) => setEvent({ ...event, duration: Number(e.target.value) })}
-                  disabled={!isEditing}
-                  required
-                />
+                {isEditing ? (
+                  <Input
+                    id="duration"
+                    type="number"
+                    value={event.duration}
+                    onChange={(e) => setEvent({ ...event, duration: Number(e.target.value) })}
+                  />
+                ) : (
+                  <p>{event.duration} minutes</p>
+                )}
               </div>
+
+              {/* Distance */}
               <div className="space-y-2">
                 <Label htmlFor="distance">Distance (miles)</Label>
-                <Input
-                  id="distance"
-                  type="number"
-                  step="0.1"
-                  value={event.distance}
-                  onChange={(e) => setEvent({ ...event, distance: Number(e.target.value) })}
-                  disabled={!isEditing}
-                  required
-                />
+                {isEditing ? (
+                  <Input
+                    id="distance"
+                    type="number"
+                    step="0.1"
+                    value={event.distance}
+                    onChange={(e) => setEvent({ ...event, distance: Number(e.target.value) })}
+                  />
+                ) : (
+                  <p>{event.distance} miles</p>
+                )}
               </div>
+
+              {/* Source */}
               <div className="space-y-2">
                 <Label htmlFor="source">Source</Label>
-                <Select
-                  value={event.source}
-                  onValueChange={(value: Source) => setEvent({ ...event, source: value })}
-                  disabled={!isEditing}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SOURCES.map((source) => (
-                      <SelectItem key={source} value={source}>
-                        {source}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {isEditing ? (
+                  <Select
+                    value={event.source}
+                    onValueChange={(value: Source) => setEvent({ ...event, source: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SOURCES.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p>{event.source}</p>
+                )}
               </div>
+
+              {/* Event Date */}
               <div className="space-y-2">
-                <Label htmlFor="createdAt">Event Date</Label>
-                <p>{formatDate(event.createdAt)}</p>
+                <Label htmlFor="eventDate">Event Date</Label>
+                {isEditing ? (
+                  <Input
+                    id="eventDate"
+                    type="datetime-local"
+                    value={formatDateForInput(event.eventDate)}
+                    onChange={(e) => setEvent({ ...event, eventDate: e.target.value })}
+                  />
+                ) : (
+                  <p>{formatDisplayDate(event.eventDate)}</p>
+                )}
               </div>
+
+              {/* Buttons */}
               {isEditing ? (
                 <div className="flex justify-end space-x-2">
                   <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
@@ -229,12 +276,18 @@ export function ExerciseEventDetails({ id }: { id: string }) {
 
       <Toast open={toastOpen} onOpenChange={setToastOpen}>
         <div
-          className={`${toastMessage.isError ? "bg-red-100 border-red-400" : "bg-green-100 border-green-400"} border-l-4 p-4`}
+          className={`${
+            toastMessage.isError ? "bg-red-100 border-red-400" : "bg-green-100 border-green-400"
+          } border-l-4 p-4`}
         >
-          <ToastTitle className={`${toastMessage.isError ? "text-red-800" : "text-green-800"} font-bold`}>
+          <ToastTitle
+            className={`${toastMessage.isError ? "text-red-800" : "text-green-800"} font-bold`}
+          >
             {toastMessage.title}
           </ToastTitle>
-          <ToastDescription className={`${toastMessage.isError ? "text-red-700" : "text-green-700"}`}>
+          <ToastDescription
+            className={`${toastMessage.isError ? "text-red-700" : "text-green-700"}`}
+          >
             {toastMessage.description}
           </ToastDescription>
         </div>
@@ -243,4 +296,3 @@ export function ExerciseEventDetails({ id }: { id: string }) {
     </ToastProvider>
   )
 }
-
