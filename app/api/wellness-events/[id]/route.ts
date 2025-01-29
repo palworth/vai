@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server"
-import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore"
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  serverTimestamp,
+  Timestamp,
+} from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -8,11 +15,20 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const docRef = doc(db, "wellnessEvents", id)
     const docSnap = await getDoc(docRef)
 
-    if (docSnap.exists()) {
-      return NextResponse.json(docSnap.data())
-    } else {
+    if (!docSnap.exists()) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
+
+    const data = docSnap.data()
+    return NextResponse.json({
+      id: docSnap.id,
+      ...data,
+      dogId: data.dogId?.id || data.dogId,
+      userId: data.userId?.id || data.userId,
+      eventDate: data.eventDate?.toDate?.()?.toISOString() || null,
+      createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+      updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
+    })
   } catch (error) {
     console.error("Error fetching wellness event:", error)
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
@@ -24,7 +40,20 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { id } = await params
     const body = await request.json()
     const docRef = doc(db, "wellnessEvents", id)
-    await updateDoc(docRef, body)
+
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const { mentalState, severity, eventDate } = body
+    const updateData: Record<string, any> = {
+      mentalState,
+      severity: Number(severity) || 1,
+      updatedAt: serverTimestamp(),
+    }
+
+    if (eventDate) {
+      updateData.eventDate = Timestamp.fromDate(new Date(eventDate))
+    }
+
+    await updateDoc(docRef, updateData)
     return NextResponse.json({ message: "Event updated successfully" })
   } catch (error) {
     console.error("Error updating wellness event:", error)
@@ -43,4 +72,3 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
-

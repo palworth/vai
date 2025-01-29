@@ -26,6 +26,7 @@ export interface HealthEvent {
   id: string
   userId: string
   dogId: string
+  eventDate: Timestamp
   createdAt: Timestamp
   updatedAt: Timestamp
   type: "health"
@@ -38,6 +39,7 @@ export interface BehaviorEvent {
   id: string
   userId: string
   dogId: string
+  eventDate: Timestamp
   createdAt: Timestamp
   updatedAt: Timestamp
   type: "behavior"
@@ -50,6 +52,7 @@ export interface DietEvent {
   id: string
   userId: string
   dogId: string
+  eventDate: Timestamp
   createdAt: Timestamp
   updatedAt: Timestamp
   type: "diet"
@@ -62,6 +65,7 @@ export interface ExerciseEvent {
   id: string
   userId: string
   dogId: string
+  eventDate: Timestamp
   createdAt: Timestamp
   updatedAt: Timestamp
   type: "exercise"
@@ -75,6 +79,7 @@ export interface WellnessEvent {
   id: string
   userId: string
   dogId: string
+  eventDate: Timestamp
   createdAt: Timestamp
   updatedAt: Timestamp
   type: "wellness"

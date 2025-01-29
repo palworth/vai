@@ -1,5 +1,16 @@
 import { NextResponse } from "next/server"
-import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, addDoc } from "firebase/firestore"
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+  addDoc,
+  serverTimestamp,
+  Timestamp,
+} from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
 export async function GET(request: Request) {
@@ -12,15 +23,26 @@ export async function GET(request: Request) {
 
   try {
     const dogRef = doc(db, "dogs", dogId)
-    const behaviorEventsQuery = query(collection(db, "behaviorEvents"), where("dogId", "==", dogRef))
+    const behaviorEventsQuery = query(
+      collection(db, "behaviorEvents"),
+      where("dogId", "==", dogRef),
+      // Add ordering by createdAt if needed
+      // orderBy("createdAt", "desc")
+    )
     const querySnapshot = await getDocs(behaviorEventsQuery)
 
-    const events = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      dogId: doc.data().dogId.id,
-      userId: doc.data().userId.id,
-    }))
+    const events = querySnapshot.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        ...data,
+        dogId: data.dogId?.id,
+        userId: data.userId?.id,
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
+        eventDate: data.eventDate?.toDate?.()?.toISOString() || data.eventDate || null,
+      }
+    })
 
     return NextResponse.json(events)
   } catch (error) {
@@ -34,13 +56,19 @@ export async function POST(request: Request) {
     const body = await request.json()
     const dogRef = doc(db, "dogs", body.dogId)
     const userRef = doc(db, "users", body.userId)
+    const now = serverTimestamp()
     const eventData = {
       ...body,
       dogId: dogRef,
       userId: userRef,
+      createdAt: now,
+      updatedAt: now,
+      eventDate: body.eventDate ? Timestamp.fromDate(new Date(body.eventDate)) : now,
+      behaviorType: body.behaviorType,
+      notes: body.notes || "",
     }
     const docRef = await addDoc(collection(db, "behaviorEvents"), eventData)
-    return NextResponse.json({ id: docRef.id, ...body })
+    return NextResponse.json({ id: docRef.id, ...body, createdAt: now, updatedAt: now, eventDate: eventData.eventDate })
   } catch (error) {
     console.error("Error creating behavior event:", error)
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
@@ -58,6 +86,11 @@ export async function PUT(request: Request) {
     }
     if (updateData.userId) {
       updateData.userId = doc(db, "users", updateData.userId)
+    }
+
+    updateData.updatedAt = serverTimestamp()
+    if (updateData.eventDate) {
+      updateData.eventDate = Timestamp.fromDate(new Date(updateData.eventDate))
     }
 
     await updateDoc(docRef, updateData)

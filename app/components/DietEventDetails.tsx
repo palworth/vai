@@ -2,117 +2,149 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/app/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+//import { Textarea } from "@/components/ui/textarea" // If you want to handle notes, optional
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
+import { format, parseISO } from "date-fns"
+
+interface Timestamp {
+  seconds: number
+  nanoseconds: number
+}
 
 interface DietEvent {
   id: string
   dogId: string
+  userId: string
   foodType: string
   brandName: string
   quantity: number
-  createdAt: {
-    seconds: number
-    nanoseconds: number
-  }
+  eventDate: string // stored as ISO string in local state
+  createdAt?: string | Timestamp
+  updatedAt?: string | Timestamp
 }
 
-const FOOD_TYPES = ["dry kibble", "homemade", "raw", "custom", "wet"] as const
-type FoodType = (typeof FOOD_TYPES)[number]
-
 export function DietEventDetails({ id }: { id: string }) {
+  const router = useRouter()
   const [event, setEvent] = useState<DietEvent | null>(null)
   const [isEditing, setIsEditing] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [toastOpen, setToastOpen] = useState(false)
-  const [toastMessage, setToastMessage] = useState({ title: "", description: "", isError: false })
-  const router = useRouter()
-  const { user } = useAuth()
+  const [toastMessage, setToastMessage] = useState<{ title: string; description: string; isError: boolean }>({
+    title: "",
+    description: "",
+    isError: false,
+  })
 
   useEffect(() => {
-    const fetchEvent = async () => {
+    async function fetchDietEvent() {
+      setIsLoading(true)
       try {
-        const response = await fetch(`/api/diet-events/${id}`)
-        if (!response.ok) throw new Error("Failed to fetch event")
-        const data = await response.json()
-        console.log("Fetched event data:", data)
-        setEvent(data)
-      } catch (error) {
-        console.error("Error fetching event:", error)
-        showToast("Error", "Failed to fetch event details", true)
+        const res = await fetch(`/api/diet-events/${id}`)
+        if (!res.ok) {
+          throw new Error(`Failed to fetch diet event: ${res.status} ${res.statusText}`)
+        }
+        const data = await res.json()
+        // data.eventDate is an ISO string (or null). We'll store it as a string in state
+        setEvent({
+          ...data,
+          eventDate: data.eventDate ?? "", // fallback if null
+        })
+      } catch (err) {
+        console.error("Error fetching diet event:", err)
+        setError("Failed to load diet event. Please try again.")
+      } finally {
+        setIsLoading(false)
       }
     }
 
-    if (user) fetchEvent()
-  }, [user, id])
+    fetchDietEvent()
+  }, [id])
+
+  const showToast = (title: string, description: string, isError = false) => {
+    setToastMessage({ title, description, isError })
+    setToastOpen(true)
+  }
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!event) return
 
     try {
-      const response = await fetch(`/api/diet-events/${id}`, {
+      // Only send the fields we're updating
+      const body = {
+        foodType: event.foodType,
+        brandName: event.brandName,
+        quantity: event.quantity,
+        eventDate: event.eventDate, // "YYYY-MM-DDTHH:mm" local string
+      }
+
+      const res = await fetch(`/api/diet-events/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          foodType: event.foodType,
-          brandName: event.brandName,
-          quantity: event.quantity,
-        }),
+        body: JSON.stringify(body),
       })
+      if (!res.ok) {
+        throw new Error("Failed to update diet event")
+      }
 
-      if (!response.ok) throw new Error("Failed to update event")
-      showToast("Success", "Event updated successfully", false)
+      showToast("Success!", "Diet event updated successfully")
       setIsEditing(false)
-    } catch (error) {
-      console.error("Error updating event:", error)
-      showToast("Error", "Failed to update event", true)
+
+      // Add a short delay before redirecting back to the dog's page
+      setTimeout(() => {
+        router.push(`/dogs/${event.dogId}`)
+      }, 1500)
+    } catch (err) {
+      console.error("Error updating diet event:", err)
+      showToast("Error!", "Failed to update diet event", true)
     }
   }
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this event?")) return
+    if (!event) return
 
     try {
-      const response = await fetch(`/api/diet-events/${id}`, {
+      const res = await fetch(`/api/diet-events/${id}`, {
         method: "DELETE",
       })
+      if (!res.ok) {
+        throw new Error("Failed to delete diet event")
+      }
 
-      if (!response.ok) throw new Error("Failed to delete event")
-      showToast("Success", "Event deleted successfully", false)
-      setTimeout(() => router.push("/diet-exercise"), 2000)
-    } catch (error) {
-      console.error("Error deleting event:", error)
-      showToast("Error", "Failed to delete event", true)
+      showToast("Success!", "Diet event deleted successfully")
+
+      // Redirect after successful deletion
+      router.push(`/dogs/${event.dogId}`)
+    } catch (err) {
+      console.error("Error deleting diet event:", err)
+      showToast("Error!", "Failed to delete diet event", true)
     }
   }
 
-  const showToast = (title: string, description: string, isError: boolean) => {
-    setToastMessage({ title, description, isError })
-    setToastOpen(true)
+  /** Format the eventDate for display */
+  function formatEventDate(dateStr: string) {
+    if (!dateStr) return "No date available"
+    const date = parseISO(dateStr) // convert from ISO string to Date
+    if (isNaN(date.getTime())) return "No date available"
+    return format(date, "MMMM d, yyyy HH:mm")
   }
 
-  const formatDate = (timestamp: { seconds: number; nanoseconds: number }) => {
-    if (!timestamp || !timestamp.seconds) {
-      return "No date available"
-    }
-    const date = new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000)
-    return date.toLocaleString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      timeZoneName: "short",
-    })
+  /** Format for <input type="datetime-local"> */
+  function formatDateForInput(dateStr: string) {
+    if (!dateStr) return ""
+    const date = parseISO(dateStr)
+    if (isNaN(date.getTime())) return ""
+    return format(date, "yyyy-MM-dd'T'HH:mm")
   }
 
-  if (!event) return <div>Loading...</div>
+  if (isLoading) return <div>Loading...</div>
+  if (error) return <div>Error: {error}</div>
+  if (!event) return <div>No event found</div>
 
   return (
     <ToastProvider>
@@ -126,49 +158,75 @@ export function DietEventDetails({ id }: { id: string }) {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleUpdate} className="space-y-4">
+              {/* Food Type */}
               <div className="space-y-2">
                 <Label htmlFor="foodType">Food Type</Label>
-                <Select
-                  value={event.foodType}
-                  onValueChange={(value: FoodType) => setEvent({ ...event, foodType: value })}
-                  disabled={!isEditing}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select food type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FOOD_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {isEditing ? (
+                  <Input
+                    id="foodType"
+                    type="text"
+                    value={event.foodType}
+                    onChange={(e) => setEvent({ ...event, foodType: e.target.value })}
+                  />
+                ) : (
+                  <p>{event.foodType}</p>
+                )}
               </div>
+
+              {/* Brand Name */}
               <div className="space-y-2">
                 <Label htmlFor="brandName">Brand Name</Label>
-                <Input
-                  id="brandName"
-                  value={event.brandName}
-                  onChange={(e) => setEvent({ ...event, brandName: e.target.value })}
-                  disabled={!isEditing}
-                />
+                {isEditing ? (
+                  <Input
+                    id="brandName"
+                    type="text"
+                    value={event.brandName}
+                    onChange={(e) => setEvent({ ...event, brandName: e.target.value })}
+                  />
+                ) : (
+                  <p>{event.brandName || "No brand name provided"}</p>
+                )}
               </div>
+
+              {/* Quantity */}
               <div className="space-y-2">
                 <Label htmlFor="quantity">Quantity (in grams)</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  value={event.quantity}
-                  onChange={(e) => setEvent({ ...event, quantity: Number(e.target.value) })}
-                  disabled={!isEditing}
-                  required
-                />
+                {isEditing ? (
+                  <Input
+                    id="quantity"
+                    type="number"
+                    value={event.quantity}
+                    onChange={(e) => setEvent({ ...event, quantity: Number(e.target.value) })}
+                  />
+                ) : (
+                  <p>{event.quantity}</p>
+                )}
               </div>
+
+              {/* Event Date */}
               <div className="space-y-2">
-                <Label htmlFor="createdAt">Event Date</Label>
-                <p>{formatDate(event.createdAt)}</p>
+                <Label htmlFor="eventDate">Event Date</Label>
+                {isEditing ? (
+                  <Input
+                    id="eventDate"
+                    type="datetime-local"
+                    value={formatDateForInput(event.eventDate)}
+                    onChange={(e) => setEvent({ ...event, eventDate: e.target.value })}
+                  />
+                ) : (
+                  <p>{formatEventDate(event.eventDate)}</p>
+                )}
               </div>
+
+              {/* Created At (read-only) */}
+              {event.createdAt && (
+                <div className="space-y-2">
+                  <Label htmlFor="createdAt">Created At</Label>
+                  <p>{formatEventDate(String(event.createdAt))}</p>
+                </div>
+              )}
+
+              {/* Buttons */}
               {isEditing ? (
                 <div className="flex justify-end space-x-2">
                   <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
@@ -191,9 +249,12 @@ export function DietEventDetails({ id }: { id: string }) {
         </Card>
       </div>
 
+      {/* Toast */}
       <Toast open={toastOpen} onOpenChange={setToastOpen}>
         <div
-          className={`${toastMessage.isError ? "bg-red-100 border-red-400" : "bg-green-100 border-green-400"} border-l-4 p-4`}
+          className={`${
+            toastMessage.isError ? "bg-red-100 border-red-400" : "bg-green-100 border-green-400"
+          } border-l-4 p-4`}
         >
           <ToastTitle className={`${toastMessage.isError ? "text-red-800" : "text-green-800"} font-bold`}>
             {toastMessage.title}
@@ -207,4 +268,3 @@ export function DietEventDetails({ id }: { id: string }) {
     </ToastProvider>
   )
 }
-
