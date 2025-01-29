@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { type Dog } from "@/lib/api" // Only import the Dog type if needed
 import { useAuth } from "@/app/contexts/AuthContext"
-import { Button } from "@/components/ui/button"
+// Removed unused: import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -21,8 +21,7 @@ export default function AddDietEventPage() {
   const [dogs, setDogs] = useState<Dog[]>([])
   const [selectedDogId, setSelectedDogId] = useState<string | null>(null)
   const [selectedDogName, setSelectedDogName] = useState<string | null>(null)
-
-  const [isLoading, setIsLoading] = useState(false)
+  // Removed unused: const [isLoading, setIsLoading] = useState(false)
   const [toastOpen, setToastOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState({ title: "", description: "", isError: false })
 
@@ -31,7 +30,6 @@ export default function AddDietEventPage() {
       if (!user) return
 
       const dogIdFromParams = searchParams.get("dogId")
-
       if (dogIdFromParams) {
         // 1. If a dogId is provided, fetch that specific dog
         const dogDocRef = doc(db, "dogs", dogIdFromParams)
@@ -65,7 +63,6 @@ export default function AddDietEventPage() {
   }
 
   const handleSuccess = () => {
-    // Show a toast and then navigate away
     showToast("Success", "Diet event added successfully", false)
     setTimeout(() => {
       router.push(`/dogs/${selectedDogId}`)
@@ -86,13 +83,11 @@ export default function AddDietEventPage() {
           </CardHeader>
           <CardContent>
             {selectedDogName ? (
-              // If we already have a selected dog (from params), just show its name
               <div className="space-y-2 mb-4">
                 <Label>Selected Dog</Label>
                 <p className="text-lg font-medium">{selectedDogName}</p>
               </div>
             ) : (
-              // Otherwise, show a dropdown to pick from all user's dogs
               <div className="space-y-2 mb-4">
                 <Label htmlFor="dogSelect">Select Dog</Label>
                 <Select
@@ -115,7 +110,6 @@ export default function AddDietEventPage() {
               </div>
             )}
 
-            {/* Show the DietEventForm once we have a selected dog */}
             {selectedDogId && (
               <DietEventForm
                 dogId={selectedDogId}
@@ -128,7 +122,6 @@ export default function AddDietEventPage() {
         </Card>
       </div>
 
-      {/* Toast */}
       <Toast open={toastOpen} onOpenChange={setToastOpen}>
         <div
           className={`${

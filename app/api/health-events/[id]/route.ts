@@ -42,6 +42,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const body = await request.json()
     const docRef = doc(db, "healthEvents", id)
 
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     const { eventType, notes, severity, eventDate } = body
     const updateData: Record<string, any> = {
       eventType,
