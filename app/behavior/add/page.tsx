@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { api, type Dog } from "@/lib/api"
+// Removed unused: import { api, type Dog } from "@/lib/api"
+import { type Dog } from "@/lib/api"
 import { useAuth } from "@/app/contexts/AuthContext"
-import { Button } from "@/components/ui/button"
+// Removed unused: import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -20,7 +21,7 @@ export default function AddBehaviorEventPage() {
   const [dogs, setDogs] = useState<Dog[]>([])
   const [selectedDogId, setSelectedDogId] = useState<string | null>(null)
   const [selectedDogName, setSelectedDogName] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  // Removed unused: const [isLoading, setIsLoading] = useState(false)
   const [toastOpen, setToastOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState({ title: "", description: "", isError: false })
 
@@ -113,7 +114,9 @@ export default function AddBehaviorEventPage() {
 
       <Toast open={toastOpen} onOpenChange={setToastOpen}>
         <div
-          className={`${toastMessage.isError ? "bg-red-100 border-red-400" : "bg-green-100 border-green-400"} border-l-4 p-4`}
+          className={`${
+            toastMessage.isError ? "bg-red-100 border-red-400" : "bg-green-100 border-green-400"
+          } border-l-4 p-4`}
         >
           <ToastTitle className={`${toastMessage.isError ? "text-red-800" : "text-green-800"} font-bold`}>
             {toastMessage.title}
@@ -127,4 +130,3 @@ export default function AddBehaviorEventPage() {
     </ToastProvider>
   )
 }
-

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/app/contexts/AuthContext"
+// Removed: We don't actually use `user` from the auth context
+// import { useAuth } from "@/app/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -28,7 +29,7 @@ interface BehaviorEvent {
 
 export function BehaviorEventDetails({ id }: { id: string }) {
   const router = useRouter()
-  const { user } = useAuth()
+  // const { user } = useAuth()  // Removed since it's not used
   const [event, setEvent] = useState<BehaviorEvent | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -51,8 +52,8 @@ export function BehaviorEventDetails({ id }: { id: string }) {
         const data = await res.json()
         setEvent(data)
         console.log("dogId:", data.dogId) // Log the dogId
-      } catch (error) {
-        console.error("Error fetching behavior event:", error)
+      } catch (err) {
+        console.error("Error fetching behavior event:", err)
         setError("Failed to load behavior event. Please try again.")
       } finally {
         setIsLoading(false)
@@ -91,7 +92,8 @@ export function BehaviorEventDetails({ id }: { id: string }) {
       setTimeout(() => {
         router.push(`/dogs/${event.dogId}`)
       }, 1500) // 1.5 seconds delay
-    } catch (error) {
+    } catch (err) {
+      console.error("Error updating behavior event:", err)
       setToastMessage({ title: "Error!", description: "Failed to update behavior event", isError: true })
       setToastOpen(true)
     }
@@ -108,7 +110,8 @@ export function BehaviorEventDetails({ id }: { id: string }) {
       setToastMessage({ title: "Success!", description: "Behavior event deleted successfully", isError: false })
       setToastOpen(true)
       router.push("/dogs") // Redirect to the dogs page after successful deletion
-    } catch (error) {
+    } catch (err) {
+      console.error("Error deleting behavior event:", err)
       setToastMessage({ title: "Error!", description: "Failed to delete behavior event", isError: true })
       setToastOpen(true)
     }
@@ -242,4 +245,3 @@ export function BehaviorEventDetails({ id }: { id: string }) {
     </ToastProvider>
   )
 }
-
