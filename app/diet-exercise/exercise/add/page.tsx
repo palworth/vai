@@ -10,9 +10,10 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
-import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore"
+import { collection, query, where, getDocs, doc, getDoc, Timestamp } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
+// Optional arrays for activity types/sources
 const SOURCES = ["Manual Add", "Strava", "Whoop", "Fitbit", "Garmin", "Apple Health"] as const
 type Source = (typeof SOURCES)[number]
 
@@ -32,14 +33,20 @@ export default function AddExerciseEventPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuth()
+
   const [dogs, setDogs] = useState<Dog[]>([])
   const [selectedDogId, setSelectedDogId] = useState<string | null>(null)
   const [selectedDogName, setSelectedDogName] = useState<string | null>(null)
-  const [duration, setDuration] = useState<number>(0)
-  const [distance, setDistance] = useState<number>(0)
+  
+  // Make duration & distance optional by default
+  const [duration, setDuration] = useState<number | undefined>(undefined)
+  const [distance, setDistance] = useState<number | undefined>(undefined)
   const [source, setSource] = useState<Source>("Manual Add")
   const [activityType, setActivityType] = useState<ActivityType>("Walking")
-  const [eventDate, setEventDate] = useState<string>(new Date().toISOString().slice(0, 16))
+
+  // We'll store the datetime-local as a string, then convert to Timestamp
+  const [eventDate, setEventDate] = useState<string>(() => new Date().toISOString().slice(0, 16))
+
   const [isLoading, setIsLoading] = useState(false)
   const [toastOpen, setToastOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState({ title: "", description: "", isError: false })
@@ -51,9 +58,9 @@ export default function AddExerciseEventPage() {
 
       if (dogIdFromParams) {
         // Fetch the specific dog
-        const dogDoc = await getDoc(doc(db, "dogs", dogIdFromParams))
-        if (dogDoc.exists()) {
-          const dogData = { id: dogDoc.id, ...dogDoc.data() } as Dog
+        const dogDocSnap = await getDoc(doc(db, "dogs", dogIdFromParams))
+        if (dogDocSnap.exists()) {
+          const dogData = { id: dogDocSnap.id, ...dogDocSnap.data() } as Dog
           setDogs([dogData])
           setSelectedDogId(dogData.id)
           setSelectedDogName(dogData.name)
@@ -61,10 +68,13 @@ export default function AddExerciseEventPage() {
           showToast("Error", "Dog not found", true)
         }
       } else {
-        // Fetch all dogs for the user
-        const dogsQuery = query(collection(db, "dogs"), where("users", "array-contains", doc(db, "users", user.uid)))
+        // Fetch all dogs for the logged-in user
+        const dogsQuery = query(
+          collection(db, "dogs"),
+          where("users", "array-contains", doc(db, "users", user.uid)),
+        )
         const querySnapshot = await getDocs(dogsQuery)
-        const dogsData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Dog)
+        const dogsData = querySnapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Dog)
         setDogs(dogsData)
       }
     }
@@ -83,27 +93,34 @@ export default function AddExerciseEventPage() {
     }
 
     try {
+      // Convert the user's chosen date/time to a Firestore Timestamp
+      const eventDateTimestamp = Timestamp.fromDate(new Date(eventDate))
+
+      // If duration/distance are not provided, default to 0 (or omit them if truly optional)
       const exerciseEventData = {
         userId: user.uid,
         dogId: selectedDogId,
-        duration,
-        distance,
+        duration: duration ?? 0,
+        distance: distance ?? 0,
         source,
         activityType,
-        eventDate: new Date(eventDate).toISOString(),
+        // Pass a Timestamp for eventDate
+        eventDate: eventDateTimestamp,
       }
 
+      // Use your API's create function
       await api.exerciseEvents.create(exerciseEventData)
+
       showToast("Success", "Exercise event added successfully", false)
       setTimeout(() => {
         router.push(`/dogs/${selectedDogId}`)
-      }, 2000)
+      }, 1500)
     } catch (error) {
       console.error("Error adding exercise event:", error)
       showToast(
         "Error",
         `Failed to add exercise event: ${error instanceof Error ? error.message : "Unknown error"}`,
-        true,
+        true
       )
     } finally {
       setIsLoading(false)
@@ -113,6 +130,10 @@ export default function AddExerciseEventPage() {
   const showToast = (title: string, description: string, isError: boolean) => {
     setToastMessage({ title, description, isError })
     setToastOpen(true)
+  }
+
+  if (!user) {
+    return <div>Please log in to add an exercise event.</div>
   }
 
   return (
@@ -147,6 +168,8 @@ export default function AddExerciseEventPage() {
                   </Select>
                 </div>
               )}
+
+              {/* Event Date & Time */}
               <div className="space-y-2">
                 <Label htmlFor="eventDate">Event Date and Time</Label>
                 <Input
@@ -157,6 +180,8 @@ export default function AddExerciseEventPage() {
                   required
                 />
               </div>
+
+              {/* Activity Type */}
               <div className="space-y-2">
                 <Label htmlFor="activityType">Activity Type</Label>
                 <Select value={activityType} onValueChange={(value: ActivityType) => setActivityType(value)}>
@@ -172,29 +197,33 @@ export default function AddExerciseEventPage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Duration (optional) */}
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration (minutes)</Label>
+                <Label htmlFor="duration">Duration (minutes) [Optional]</Label>
                 <Input
                   id="duration"
                   type="number"
-                  value={duration}
-                  onChange={(e) => setDuration(Number(e.target.value))}
-                  required
+                  value={duration ?? ""}
+                  onChange={(e) => setDuration(e.target.value ? Number(e.target.value) : undefined)}
                   min="0"
                 />
               </div>
+
+              {/* Distance (optional) */}
               <div className="space-y-2">
-                <Label htmlFor="distance">Distance (miles)</Label>
+                <Label htmlFor="distance">Distance (miles) [Optional]</Label>
                 <Input
                   id="distance"
                   type="number"
-                  value={distance}
-                  onChange={(e) => setDistance(Number(e.target.value))}
-                  required
+                  value={distance ?? ""}
+                  onChange={(e) => setDistance(e.target.value ? Number(e.target.value) : undefined)}
                   min="0"
                   step="0.1"
                 />
               </div>
+
+              {/* Source (optional) */}
               <div className="space-y-2">
                 <Label htmlFor="source">Source</Label>
                 <Select value={source} onValueChange={(value: Source) => setSource(value)}>
@@ -210,6 +239,8 @@ export default function AddExerciseEventPage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Action Buttons */}
               <div className="flex justify-end space-x-2">
                 <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading}>
                   Cancel
@@ -223,9 +254,12 @@ export default function AddExerciseEventPage() {
         </Card>
       </div>
 
+      {/* Toast */}
       <Toast open={toastOpen} onOpenChange={setToastOpen}>
         <div
-          className={`${toastMessage.isError ? "bg-red-100 border-red-400" : "bg-green-100 border-green-400"} border-l-4 p-4`}
+          className={`${
+            toastMessage.isError ? "bg-red-100 border-red-400" : "bg-green-100 border-green-400"
+          } border-l-4 p-4`}
         >
           <ToastTitle className={`${toastMessage.isError ? "text-red-800" : "text-green-800"} font-bold`}>
             {toastMessage.title}
@@ -239,4 +273,3 @@ export default function AddExerciseEventPage() {
     </ToastProvider>
   )
 }
-
