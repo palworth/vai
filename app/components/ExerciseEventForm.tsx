@@ -1,22 +1,32 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { addDoc, collection, doc, updateDoc, Timestamp } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { useState, useEffect } from "react"
+import {
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  serverTimestamp,
+  Timestamp,
+} from "firebase/firestore"
+import { db } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { format } from 'date-fns'
+import { format } from "date-fns"
 
+/** We define the shape of an ExerciseEvent locally. Fields not included in doc creation. */
 interface ExerciseEvent {
   id?: string
   dogId: string
   dateTime: Date
   activityType: string
-  duration: number
-  distance?: number
-  source: string
+  duration?: number // optional
+  distance?: number // optional
+  source?: string
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 interface ExerciseEventFormProps {
@@ -26,13 +36,27 @@ interface ExerciseEventFormProps {
   onCancel: () => void
 }
 
+/** For demonstration, let's define some typical activity types/sources */
+const ACTIVITY_TYPES = [
+  "Walking",
+  "Running/Jogging",
+  "Fetch",
+  "Hiking",
+  "Dog Park Playtime",
+  "Indoor Play",
+  "Outside Alone Time",
+  "Swimming",
+] as const
+
+const SOURCES = ["Manual Add", "Strava", "Whoop", "Fitbit", "Garmin", "Apple Health"] as const
+
 export function ExerciseEventForm({ dogId, event, onSuccess, onCancel }: ExerciseEventFormProps) {
-  const [exerciseEvent, setExerciseEvent] = useState<Omit<ExerciseEvent, 'id' | 'dogId'>>({
+  const [exerciseEvent, setExerciseEvent] = useState<Omit<ExerciseEvent, "id" | "dogId" | "createdAt" | "updatedAt">>({
     dateTime: event?.dateTime || new Date(),
-    activityType: event?.activityType || 'walk',
-    duration: event?.duration || 0,
+    activityType: event?.activityType || "Walking",
+    duration: event?.duration || undefined,
     distance: event?.distance || undefined,
-    source: event?.source || 'manual'
+    source: event?.source || "Manual Add",
   })
 
   useEffect(() => {
@@ -42,107 +66,124 @@ export function ExerciseEventForm({ dogId, event, onSuccess, onCancel }: Exercis
         activityType: event.activityType,
         duration: event.duration,
         distance: event.distance,
-        source: event.source
+        source: event.source,
       })
     }
   }, [event])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-
     try {
-      const eventData = {
+      const payload = {
         ...exerciseEvent,
-        dateTime: Timestamp.fromDate(exerciseEvent.dateTime)
+        // Convert dateTime to a Firestore Timestamp
+        dateTime: Timestamp.fromDate(exerciseEvent.dateTime),
+        updatedAt: serverTimestamp(),
       }
 
       if (event?.id) {
-        await updateDoc(doc(db, 'exerciseEvents', event.id), eventData)
+        // Update existing
+        await updateDoc(doc(db, "exerciseEvents", event.id), payload)
       } else {
-        await addDoc(collection(db, 'exerciseEvents'), {
-          ...eventData,
-          dogId: doc(db, 'dogs', dogId)
+        // Create new
+        await addDoc(collection(db, "exerciseEvents"), {
+          ...payload,
+          dogId: doc(db, "dogs", dogId),
+          createdAt: serverTimestamp(),
         })
       }
+
       onSuccess()
-    } catch (error) {
-      console.error('Error saving exercise event:', error)
+    } catch (err) {
+      console.error("Error saving exercise event:", err)
     }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Date/Time */}
       <div className="space-y-2">
-        <Label htmlFor="dateTime">Date and Time</Label>
+        <Label htmlFor="dateTime">Date/Time</Label>
         <Input
           id="dateTime"
           type="datetime-local"
           value={format(exerciseEvent.dateTime, "yyyy-MM-dd'T'HH:mm")}
           onChange={(e) => setExerciseEvent({ ...exerciseEvent, dateTime: new Date(e.target.value) })}
-          required
         />
       </div>
+
+      {/* Activity Type */}
       <div className="space-y-2">
-        <Label htmlFor="activityType">Activity Type</Label>
-        <Select 
-          value={exerciseEvent.activityType} 
-          onValueChange={(value: string) => setExerciseEvent({ ...exerciseEvent, activityType: value })}
+        <Label>Activity Type</Label>
+        <Select
+          value={exerciseEvent.activityType}
+          onValueChange={(val) => setExerciseEvent({ ...exerciseEvent, activityType: val })}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select activity type" />
+            <SelectValue placeholder="Choose activity type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="walk">Walk</SelectItem>
-            <SelectItem value="run">Run</SelectItem>
-            <SelectItem value="hike">Hike</SelectItem>
-            <SelectItem value="play">Play</SelectItem>
-            <SelectItem value="swim">Swim</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
+            {ACTIVITY_TYPES.map((act) => (
+              <SelectItem key={act} value={act}>
+                {act}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
+
+      {/* Duration (optional) */}
       <div className="space-y-2">
-        <Label htmlFor="duration">Duration (minutes)</Label>
+        <Label>Duration (minutes) [Optional]</Label>
         <Input
-          id="duration"
           type="number"
-          value={exerciseEvent.duration}
-          onChange={(e) => setExerciseEvent({ ...exerciseEvent, duration: parseFloat(e.target.value) })}
-          required
+          value={exerciseEvent.duration ?? ""}
+          onChange={(e) =>
+            setExerciseEvent({ ...exerciseEvent, duration: e.target.value ? Number(e.target.value) : undefined })
+          }
         />
       </div>
+
+      {/* Distance (optional) */}
       <div className="space-y-2">
-        <Label htmlFor="distance">Distance (km, optional)</Label>
+        <Label>Distance (miles) [Optional]</Label>
         <Input
-          id="distance"
           type="number"
           step="0.01"
-          value={exerciseEvent.distance || ''}
-          onChange={(e) => setExerciseEvent({ ...exerciseEvent, distance: e.target.value ? parseFloat(e.target.value) : undefined })}
+          value={exerciseEvent.distance ?? ""}
+          onChange={(e) =>
+            setExerciseEvent({ ...exerciseEvent, distance: e.target.value ? Number(e.target.value) : undefined })
+          }
         />
       </div>
+
+      {/* Source */}
       <div className="space-y-2">
-        <Label htmlFor="source">Source</Label>
-        <Select 
-          value={exerciseEvent.source} 
-          onValueChange={(value: string) => setExerciseEvent({ ...exerciseEvent, source: value })}
+        <Label>Source</Label>
+        <Select
+          value={exerciseEvent.source ?? "Manual Add"}
+          onValueChange={(val) => setExerciseEvent({ ...exerciseEvent, source: val })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select source" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="manual">Manual</SelectItem>
-            <SelectItem value="Strava">Strava</SelectItem>
-            <SelectItem value="Whoop">Whoop</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
+            {SOURCES.map((src) => (
+              <SelectItem key={src} value={src}>
+                {src}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
+
+      {/* Buttons */}
       <div className="flex justify-end space-x-2">
-        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button type="submit">{event?.id ? 'Update' : 'Add'} Exercise Event</Button>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">{event?.id ? "Update" : "Add"} Exercise Event</Button>
       </div>
     </form>
   )
 }
-
