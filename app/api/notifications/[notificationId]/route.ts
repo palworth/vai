@@ -1,37 +1,37 @@
+// app/api/notifications/[notificationId]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { deleteNotification, /* getNotification */ } from '@/lib/notifications'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { notificationId: string } }
 ) {
   const { notificationId } = params
-
-  // TODO: Query Firebase for the notification with this ID
-  // e.g., const docRef = doc(db, 'notifications', notificationId)
-  // const docSnap = await getDoc(docRef)
-
-  // For now, just return a dummy object
-  return NextResponse.json({
-    id: notificationId,
-    title: 'Sample Notification',
-    message: 'This is a single notification fetch example',
-  })
+  try {
+    // Example direct fetch (or you can implement getNotification in notifications.ts)
+    const ref = doc(db, 'notifications', notificationId)
+    const snap = await getDoc(ref)
+    if (!snap.exists()) {
+      return NextResponse.json({ error: 'Notification not found' }, { status: 404 })
+    }
+    const data = snap.data()
+    return NextResponse.json({ id: snap.id, ...data })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 }
 
-// Example placeholder: update or mark notification as read
-export async function PATCH(
+export async function DELETE(
   request: NextRequest,
   { params }: { params: { notificationId: string } }
 ) {
   const { notificationId } = params
-  const body = await request.json()
-
-  // TODO: Update doc in Firebase
-  // e.g., await updateDoc(doc(db, 'notifications', notificationId), { read: body.read })
-
-  return NextResponse.json({
-    success: true,
-    message: 'Notification updated',
-    notificationId,
-  })
+  try {
+    await deleteNotification(notificationId)
+    return NextResponse.json({ success: true, message: 'Notification deleted' })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 }
