@@ -1,16 +1,12 @@
 // app/api/notifications/[notificationId]/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { deleteNotification, /* getNotification */ } from '@/lib/notifications'
+import { NextResponse } from 'next/server'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { deleteNotification } from '@/lib/notifications'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { notificationId: string } }
-) {
-  const { notificationId } = params
+export async function GET(request: Request, context: any) {
+  const { notificationId } = context.params
   try {
-    // Example direct fetch (or you can implement getNotification in notifications.ts)
     const ref = doc(db, 'notifications', notificationId)
     const snap = await getDoc(ref)
     if (!snap.exists()) {
@@ -23,11 +19,8 @@ export async function GET(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { notificationId: string } }
-) {
-  const { notificationId } = params
+export async function DELETE(request: Request, context: any) {
+  const { notificationId } = context.params
   try {
     await deleteNotification(notificationId)
     return NextResponse.json({ success: true, message: 'Notification deleted' })
