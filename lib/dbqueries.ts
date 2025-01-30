@@ -2,114 +2,172 @@
 
 import { db } from '@/lib/firebase'
 import {
-  doc,
   collection,
   getDocs,
   query,
   where,
   orderBy,
   limit,
+  doc,
+  getDoc,
   DocumentData,
+  DocumentReference,
 } from 'firebase/firestore'
 
 export interface UserData {
   id: string
   full_name?: string
+  email?: string
   // etc.
 }
 
 export interface DogData {
   id: string
   name?: string
+  breed?: string
+  // array of references for diet events
+  dietEventIds?: DocumentReference[]
+  // array of references for exercise events
+  exerciseEventIds?: DocumentReference[]
   // etc.
 }
 
-// Example data structure for event docs
+// Diet event structure
 export interface DietEventData {
-  dogId: string
-  userId: string
-  eventDate: any
-  // ...
+  dogId?: string | DocumentReference
+  userId?: string | DocumentReference
+  brandName?: string
+  foodType?: string
+  quantity?: number
+  eventDate?: any // Firestore Timestamp or Date
 }
 
+// Exercise event structure
 export interface ExerciseEventData {
-  dogId: string
-  userId: string
-  eventDate: any
-  // ...
+  dogId?: string | DocumentReference
+  userId?: string | DocumentReference
+  activityType?: string
+  distance?: number
+  duration?: number
+  eventDate?: any
 }
 
 /**
- * Return all users in 'users' collection. 
- * In real code, you might want to limit or handle pagination if there are thousands of users.
+ * Fetch a single user doc
  */
-export async function fetchAllUsers(): Promise<UserData[]> {
-  const ref = collection(db, 'users')
-  const snapshot = await getDocs(ref)
-  const users: UserData[] = snapshot.docs.map((docSnap) => {
-    const data = docSnap.data() as DocumentData
-    return { id: docSnap.id, ...data }
-  })
-  return users
+export async function fetchUserData(userId: string): Promise<UserData | null> {
+  const userRef = doc(db, 'users', userId)
+  const snap = await getDoc(userRef)
+  if (!snap.exists()) return null
+
+  const data = snap.data() as DocumentData
+  return {
+    id: snap.id,
+    full_name: data.full_name ?? '',
+    email: data.email ?? '',
+  }
 }
 
 /**
- * Return all dogs that reference userId in their `users` array or `users` references.
+ * Fetch a single dog doc
  */
-export async function fetchDogsForUser(userId: string): Promise<DogData[]> {
-  // If 'dogs' doc has 'users' as array of doc references:
-  // where('users', 'array-contains', doc(db, 'users', userId))
-  // Or if it's an array of userId strings, do:
-  // where('users', 'array-contains', userId)
+export async function fetchDogData(dogId: string): Promise<DogData | null> {
+  const dogRef = doc(db, 'dogs', dogId)
+  const snap = await getDoc(dogRef)
+  if (!snap.exists()) return null
 
-  const dogsRef = collection(db, 'dogs')
-  const q = query(
-    dogsRef,
-    where('users', 'array-contains', doc(db, 'users', userId))
-  )
-  const snapshot = await getDocs(q)
-  return snapshot.docs.map((docSnap) => {
-    const data = docSnap.data() as DocumentData
-    return { id: docSnap.id, ...data }
-  })
+  const data = snap.data() as DocumentData
+  return {
+    id: snap.id,
+    name: data.name ?? '',
+    breed: data.breed ?? '',
+    dietEventIds: data.dietEventIds ?? [],
+    exerciseEventIds: data.exerciseEventIds ?? [],
+  }
 }
 
 /**
- * A simple helper to compute the absolute difference in days between two Dates
+ * Loop over dog's dietEventIds references to find the most recent event
+ */
+export async function fetchLastDietEventByRefs(dogDoc: DogData | null): Promise<DietEventData | null> {
+  if (!dogDoc?.dietEventIds || dogDoc.dietEventIds.length === 0) {
+    return null
+  }
+
+  let lastEvent: DietEventData | null = null
+  let lastTimestamp: number | null = null
+
+  for (const eventRef of dogDoc.dietEventIds) {
+    if (!eventRef) continue
+    const eventSnap = await getDoc(eventRef)
+    if (!eventSnap.exists()) continue
+
+    const data = eventSnap.data()
+    const dateField = data.eventDate
+    if (!dateField) continue
+
+    const eventDate = dateField.toDate ? dateField.toDate() : new Date(dateField)
+    const msTime = eventDate.getTime()
+
+    if (!lastTimestamp || msTime > lastTimestamp) {
+      lastTimestamp = msTime
+      lastEvent = {
+        dogId: data.dogId,
+        userId: data.userId,
+        brandName: data.brandName ?? '',
+        foodType: data.foodType ?? '',
+        quantity: data.quantity ?? 0,
+        eventDate: data.eventDate,
+      }
+    }
+  }
+
+  return lastEvent
+}
+
+/**
+ * Loop over dog's exerciseEventIds references to find the most recent event
+ */
+export async function fetchLastExerciseEventByRefs(dogDoc: DogData | null): Promise<ExerciseEventData | null> {
+  if (!dogDoc?.exerciseEventIds || dogDoc.exerciseEventIds.length === 0) {
+    return null
+  }
+
+  let lastEvent: ExerciseEventData | null = null
+  let lastTimestamp: number | null = null
+
+  for (const eventRef of dogDoc.exerciseEventIds) {
+    if (!eventRef) continue
+    const eventSnap = await getDoc(eventRef)
+    if (!eventSnap.exists()) continue
+
+    const data = eventSnap.data()
+    const dateField = data.eventDate
+    if (!dateField) continue
+
+    const eventDate = dateField.toDate ? dateField.toDate() : new Date(dateField)
+    const msTime = eventDate.getTime()
+
+    if (!lastTimestamp || msTime > lastTimestamp) {
+      lastTimestamp = msTime
+      lastEvent = {
+        dogId: data.dogId,
+        userId: data.userId,
+        activityType: data.activityType ?? '',
+        distance: data.distance ?? 0,
+        duration: data.duration ?? 0,
+        eventDate: data.eventDate,
+      }
+    }
+  }
+
+  return lastEvent
+}
+
+/**
+ * Helper to compute days between two Dates
  */
 export function daysBetween(date1: Date, date2: Date): number {
   const diff = Math.abs(date2.getTime() - date1.getTime())
   return Math.floor(diff / (1000 * 60 * 60 * 24))
-}
-
-/**
- * Return the most recent diet event for a dog.
- */
-export async function fetchLastDietEvent(dogId: string): Promise<DietEventData | null> {
-  const colRef = collection(db, 'dietEvents')
-  const q = query(
-    colRef,
-    where('dogId', '==', dogId),
-    orderBy('eventDate', 'desc'),
-    limit(1)
-  )
-  const snapshot = await getDocs(q)
-  if (snapshot.empty) return null
-  return snapshot.docs[0].data() as DietEventData
-}
-
-/**
- * Return the most recent exercise event for a dog.
- */
-export async function fetchLastExerciseEvent(dogId: string): Promise<ExerciseEventData | null> {
-  const colRef = collection(db, 'exerciseEvents')
-  const q = query(
-    colRef,
-    where('dogId', '==', dogId),
-    orderBy('eventDate', 'desc'),
-    limit(1)
-  )
-  const snapshot = await getDocs(q)
-  if (snapshot.empty) return null
-  return snapshot.docs[0].data() as ExerciseEventData
 }
