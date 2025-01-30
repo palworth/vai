@@ -46,7 +46,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { foodType, brandName, quantity, eventDate } = body
 
     // Build an object of fields to update
-    /* eslint-disable @typescript-eslint/no-explicit-any */
     const updateData: Record<string, any> = {
       foodType,
       brandName,

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/app/contexts/AuthContext"
@@ -34,7 +34,7 @@ interface Notification {
 
 export default function NotificationsPage() {
   const { user } = useAuth()
-  const router = useRouter()
+  //const router = useRouter()
   const searchParams = useSearchParams()
 
   const [dogs, setDogs] = useState<Dog[]>([])
