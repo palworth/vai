@@ -19,7 +19,16 @@ import {
   daysBetween,
 } from '@/lib/dbqueries'
 import { generateNotificationMessage } from '@/lib/openai'
-import { buildDietPrompt, buildExercisePrompt } from '@/utils/prompts'
+import {
+  buildDietPrompt,
+  buildExercisePrompt,
+  buildWellnessPrompt,
+  buildBehaviorPrompt,
+} from '@/utils/prompts'
+import {
+  fetchLastWellnessEventByRefs,
+  fetchLastBehaviorEventByRefs,
+} from '@/lib/dbqueries' // We'll add them in dbqueries below
 
 // NotificationDoc definition
 export interface NotificationDoc {
@@ -126,7 +135,6 @@ export async function createExerciseNotification(
   const dogDoc = await fetchDogData(dogId)
   console.log('[createExerciseNotification] dogDoc ->', dogDoc)
 
-  // Now referencing the new approach for exercise event references
   const lastExercise = await fetchLastExerciseEventByRefs(dogDoc)
   console.log('[createExerciseNotification] lastExercise ->', lastExercise)
 
@@ -188,6 +196,164 @@ export async function createExerciseNotification(
     message: finalMessage,
     read: false,
     type: 'exercise',
+    createdAt: new Date(),
+  }
+}
+
+/**
+ * createWellnessNotification: fetches dogDoc and uses fetchLastWellnessEventByRefs
+ */
+export async function createWellnessNotification(
+  userId: string,
+  dogId: string,
+  customMessage?: string
+): Promise<NotificationDoc> {
+  const userDoc = await fetchUserData(userId)
+  console.log('[createWellnessNotification] userDoc ->', userDoc)
+
+  const dogDoc = await fetchDogData(dogId)
+  console.log('[createWellnessNotification] dogDoc ->', dogDoc)
+
+  // new approach for wellness event references
+  const { fetchLastWellnessEventByRefs } = await import('@/lib/dbqueries')
+  const lastWellness = await fetchLastWellnessEventByRefs(dogDoc)
+  console.log('[createWellnessNotification] lastWellness ->', lastWellness)
+
+  let daysSince = 0
+  let mentalState = ''
+  let severityLevel = 0
+  let lastDateString = 'Unknown date'
+
+  if (lastWellness?.eventDate) {
+    const eventDate = lastWellness.eventDate.toDate
+      ? lastWellness.eventDate.toDate()
+      : new Date(lastWellness.eventDate)
+    daysSince = daysBetween(eventDate, new Date())
+    lastDateString = eventDate.toLocaleDateString()
+    mentalState = lastWellness.mentalState ?? ''
+    severityLevel = lastWellness.severityLevel ?? 0
+  } else {
+    daysSince = Infinity
+  }
+
+  let finalMessage = customMessage
+  if (!finalMessage) {
+    const userName = userDoc?.full_name || 'there'
+    const dogName = dogDoc?.name || 'your dog'
+    const dogBreed = dogDoc?.breed || ''
+
+    const { buildWellnessPrompt } = await import('@/utils/prompts')
+    const prompt = buildWellnessPrompt(
+      userName,
+      dogName,
+      dogBreed,
+      mentalState,
+      severityLevel,
+      lastDateString,
+      daysSince
+    )
+    console.log('[createWellnessNotification] Prompt ->', prompt)
+
+    finalMessage = await generateNotificationMessage(prompt)
+  }
+
+  const docRef = await addDoc(collection(db, 'notifications'), {
+    userId,
+    dogId,
+    title: 'Wellness Check Reminder',
+    message: finalMessage,
+    read: false,
+    type: 'wellness',
+    createdAt: new Date(),
+  })
+
+  return {
+    id: docRef.id,
+    userId,
+    dogId,
+    title: 'Wellness Check Reminder',
+    message: finalMessage,
+    read: false,
+    type: 'wellness',
+    createdAt: new Date(),
+  }
+}
+
+/**
+ * createBehaviorNotification: fetches dogDoc and uses fetchLastBehaviorEventByRefs
+ */
+export async function createBehaviorNotification(
+  userId: string,
+  dogId: string,
+  customMessage?: string
+): Promise<NotificationDoc> {
+  const userDoc = await fetchUserData(userId)
+  console.log('[createBehaviorNotification] userDoc ->', userDoc)
+
+  const dogDoc = await fetchDogData(dogId)
+  console.log('[createBehaviorNotification] dogDoc ->', dogDoc)
+
+  // new approach for behavior event references
+  const { fetchLastBehaviorEventByRefs } = await import('@/lib/dbqueries')
+  const lastBehavior = await fetchLastBehaviorEventByRefs(dogDoc)
+  console.log('[createBehaviorNotification] lastBehavior ->', lastBehavior)
+
+  let daysSince = 0
+  let behaviorType = ''
+  let severityLevel = 0
+  let lastDateString = 'Unknown date'
+
+  if (lastBehavior?.eventDate) {
+    const eventDate = lastBehavior.eventDate.toDate
+      ? lastBehavior.eventDate.toDate()
+      : new Date(lastBehavior.eventDate)
+    daysSince = daysBetween(eventDate, new Date())
+    lastDateString = eventDate.toLocaleDateString()
+    behaviorType = lastBehavior.behaviorType ?? ''
+    severityLevel = lastBehavior.severityLevel ?? 0
+  } else {
+    daysSince = Infinity
+  }
+
+  let finalMessage = customMessage
+  if (!finalMessage) {
+    const userName = userDoc?.full_name || 'there'
+    const dogName = dogDoc?.name || 'your dog'
+    const dogBreed = dogDoc?.breed || ''
+
+    const { buildBehaviorPrompt } = await import('@/utils/prompts')
+    const prompt = buildBehaviorPrompt(
+      userName,
+      dogName,
+      dogBreed,
+      behaviorType,
+      severityLevel,
+      lastDateString,
+      daysSince
+    )
+    console.log('[createBehaviorNotification] Prompt ->', prompt)
+
+    finalMessage = await generateNotificationMessage(prompt)
+  }
+
+  const docRef = await addDoc(collection(db, 'notifications'), {
+    userId,
+    dogId,
+    title: 'Behavior Update Reminder',
+    message: finalMessage,
+    read: false,
+    type: 'behavior',
+    createdAt: new Date(),
+  })
+
+  return {
+    id: docRef.id,
+    userId,
+    dogId,
+    title: 'Behavior Update Reminder',
+    message: finalMessage,
+    read: false,
+    type: 'behavior',
     createdAt: new Date(),
   }
 }
