@@ -4,10 +4,6 @@ import { db } from '@/lib/firebase'
 import {
   collection,
   getDocs,
-  query,
-  where,
-  orderBy,
-  limit,
   doc,
   getDoc,
   DocumentData,
@@ -25,11 +21,10 @@ export interface DogData {
   id: string
   name?: string
   breed?: string
-  // array of references for diet events
   dietEventIds?: DocumentReference[]
-  // array of references for exercise events
   exerciseEventIds?: DocumentReference[]
-  // etc.
+  wellnessEventIds?: DocumentReference[]
+  behaviorEventIds?: DocumentReference[]
 }
 
 // Diet event structure
@@ -39,7 +34,7 @@ export interface DietEventData {
   brandName?: string
   foodType?: string
   quantity?: number
-  eventDate?: any // Firestore Timestamp or Date
+  eventDate?: any
 }
 
 // Exercise event structure
@@ -49,6 +44,20 @@ export interface ExerciseEventData {
   activityType?: string
   distance?: number
   duration?: number
+  eventDate?: any
+}
+
+// Wellness event structure
+export interface WellnessEventData {
+  mentalState?: string
+  severityLevel?: number
+  eventDate?: any
+}
+
+// Behavior event structure
+export interface BehaviorEventData {
+  behaviorType?: string
+  severityLevel?: number
   eventDate?: any
 }
 
@@ -83,6 +92,8 @@ export async function fetchDogData(dogId: string): Promise<DogData | null> {
     breed: data.breed ?? '',
     dietEventIds: data.dietEventIds ?? [],
     exerciseEventIds: data.exerciseEventIds ?? [],
+    wellnessEventIds: data.wellnessEventIds ?? [],
+    behaviorEventIds: data.behaviorEventIds ?? [],
   }
 }
 
@@ -165,7 +176,79 @@ export async function fetchLastExerciseEventByRefs(dogDoc: DogData | null): Prom
 }
 
 /**
- * Helper to compute days between two Dates
+ * Loop over dog's wellnessEventIds references to find the most recent event
+ */
+export async function fetchLastWellnessEventByRefs(dogDoc: DogData | null): Promise<WellnessEventData | null> {
+  if (!dogDoc?.wellnessEventIds || dogDoc.wellnessEventIds.length === 0) {
+    return null
+  }
+
+  let lastEvent: WellnessEventData | null = null
+  let lastTimestamp: number | null = null
+
+  for (const eventRef of dogDoc.wellnessEventIds) {
+    if (!eventRef) continue
+    const eventSnap = await getDoc(eventRef)
+    if (!eventSnap.exists()) continue
+
+    const data = eventSnap.data()
+    const dateField = data.eventDate
+    if (!dateField) continue
+
+    const eventDate = dateField.toDate ? dateField.toDate() : new Date(dateField)
+    const msTime = eventDate.getTime()
+
+    if (!lastTimestamp || msTime > lastTimestamp) {
+      lastTimestamp = msTime
+      lastEvent = {
+        mentalState: data.mentalState ?? '',
+        severityLevel: data.severity ?? 0, // or data.severityLevel if that's what you store
+        eventDate: data.eventDate,
+      }
+    }
+  }
+
+  return lastEvent
+}
+
+/**
+ * Loop over dog's behaviorEventIds references to find the most recent event
+ */
+export async function fetchLastBehaviorEventByRefs(dogDoc: DogData | null): Promise<BehaviorEventData | null> {
+  if (!dogDoc?.behaviorEventIds || dogDoc.behaviorEventIds.length === 0) {
+    return null
+  }
+
+  let lastEvent: BehaviorEventData | null = null
+  let lastTimestamp: number | null = null
+
+  for (const eventRef of dogDoc.behaviorEventIds) {
+    if (!eventRef) continue
+    const eventSnap = await getDoc(eventRef)
+    if (!eventSnap.exists()) continue
+
+    const data = eventSnap.data()
+    const dateField = data.eventDate
+    if (!dateField) continue
+
+    const eventDate = dateField.toDate ? dateField.toDate() : new Date(dateField)
+    const msTime = eventDate.getTime()
+
+    if (!lastTimestamp || msTime > lastTimestamp) {
+      lastTimestamp = msTime
+      lastEvent = {
+        behaviorType: data.behaviorType ?? '',
+        severityLevel: data.severityLevel ?? 0,
+        eventDate: data.eventDate,
+      }
+    }
+  }
+
+  return lastEvent
+}
+
+/**
+ * Helper to compute daysBetween two Dates
  */
 export function daysBetween(date1: Date, date2: Date): number {
   const diff = Math.abs(date2.getTime() - date1.getTime())
