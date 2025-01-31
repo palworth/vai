@@ -20,7 +20,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 interface Dog {
   id: string
   name: string
-  // Add any other fields you have for dogs
 }
 
 interface Notification {
@@ -34,7 +33,6 @@ interface Notification {
 
 export default function NotificationsPage() {
   const { user } = useAuth()
-  //const router = useRouter()
   const searchParams = useSearchParams()
 
   const [dogs, setDogs] = useState<Dog[]>([])
@@ -47,7 +45,7 @@ export default function NotificationsPage() {
   const [loadingNotifs, setLoadingNotifs] = useState(true)
 
   // ------------------------------------------
-  // 1) FETCH DOG(S) SIMILAR TO AddBehaviorEventPage
+  // 1) FETCH DOG(S)
   // ------------------------------------------
   useEffect(() => {
     if (!user) {
@@ -59,7 +57,6 @@ export default function NotificationsPage() {
       try {
         const dogIdFromParams = searchParams.get("dogId")
         if (dogIdFromParams) {
-          // Fetch the specific dog
           const dogDocSnap = await getDoc(doc(db, "dogs", dogIdFromParams))
           if (dogDocSnap.exists()) {
             const dogData = { id: dogDocSnap.id, ...dogDocSnap.data() } as Dog
@@ -70,10 +67,6 @@ export default function NotificationsPage() {
             console.error("Dog not found:", dogIdFromParams)
           }
         } else {
-          // Fetch all dogs for the user
-          // If your 'dogs' collection uses an array of references, you can do:
-          // where("users", "array-contains", doc(db, "users", user.uid))
-          // or if it's just an array of userId strings, do: where("users", "array-contains", user.uid)
           const dogsQuery = query(
             collection(db, "dogs"),
             where("users", "array-contains", doc(db, "users", user.uid))
@@ -85,7 +78,6 @@ export default function NotificationsPage() {
           })) as Dog[]
           setDogs(dogsData)
 
-          // Optionally auto-select the first dog
           if (dogsData.length === 1) {
             setSelectedDogId(dogsData[0].id)
             setSelectedDogName(dogsData[0].name)
@@ -102,7 +94,7 @@ export default function NotificationsPage() {
   }, [user, searchParams])
 
   // ------------------------------------------
-  // 2) FETCH NOTIFICATIONS FOR THIS USER
+  // 2) FETCH NOTIFICATIONS
   // ------------------------------------------
   useEffect(() => {
     if (!user) {
@@ -134,7 +126,7 @@ export default function NotificationsPage() {
   }, [user])
 
   // ------------------------------------------
-  // 3) CREATE NOTIFICATION (POST) 
+  // 3) CREATE NOTIFICATION (POST)
   // ------------------------------------------
   async function handleCreateNotification(type: string) {
     if (!user) {
@@ -201,13 +193,11 @@ export default function NotificationsPage() {
           ) : dogs.length === 0 ? (
             <p>No dogs found. Please add a dog first.</p>
           ) : selectedDogName ? (
-            // If we already set a single dog's name from search params or there's only one dog
             <div className="space-y-2 mb-4">
               <Label>Selected Dog</Label>
               <p className="text-lg font-medium">{selectedDogName}</p>
             </div>
           ) : (
-            // Show a dropdown if multiple dogs
             <div className="space-y-2 mb-4">
               <Label htmlFor="dogSelect">Select Dog</Label>
               <Select
@@ -246,6 +236,18 @@ export default function NotificationsPage() {
               className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
             >
               Create Exercise Notification
+            </button>
+            <button
+              onClick={() => handleCreateNotification("wellness")}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded"
+            >
+              Create Wellness Notification
+            </button>
+            <button
+              onClick={() => handleCreateNotification("behavior")}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded"
+            >
+              Create Behavior Notification
             </button>
             <button
               onClick={() => handleCreateNotification("test")}
