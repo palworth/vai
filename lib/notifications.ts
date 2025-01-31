@@ -19,16 +19,8 @@ import {
   daysBetween,
 } from '@/lib/dbqueries'
 import { generateNotificationMessage } from '@/lib/openai'
-import {
-  buildDietPrompt,
-  buildExercisePrompt,
-  buildWellnessPrompt,
-  buildBehaviorPrompt,
-} from '@/utils/prompts'
-import {
-  fetchLastWellnessEventByRefs,
-  fetchLastBehaviorEventByRefs,
-} from '@/lib/dbqueries' // We'll add them in dbqueries below
+
+
 
 // NotificationDoc definition
 export interface NotificationDoc {
@@ -84,7 +76,8 @@ export async function createDietNotification(
     const dogName = dogDoc?.name || 'your dog'
     const dogBreed = dogDoc?.breed || ''
 
-    const prompt = buildDietPrompt(
+    const { buildDietPrompt } = await import('@/utils/prompts')
+      const prompt = buildDietPrompt( 
       userName,
       dogName,
       dogBreed,
@@ -162,8 +155,9 @@ export async function createExerciseNotification(
     const userName = userDoc?.full_name || 'there'
     const dogName = dogDoc?.name || 'your dog'
     const dogBreed = dogDoc?.breed || ''
-
-    const prompt = buildExercisePrompt(
+     
+    const { buildExercisePrompt } = await import('@/utils/prompts')
+      const prompt = buildExercisePrompt( 
       userName,
       dogName,
       dogBreed,
