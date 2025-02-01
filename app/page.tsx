@@ -10,6 +10,7 @@ export default function Home() {
         { title: 'Behavior', href: '/behavior', description: 'Track and improve your dog\'s behavior' },
         { title: 'Dogs', href: '/dogs', description: 'View and manage your dogs' },
         { title: 'Dashboards', href: '/dashboards', description: 'Access overall health and diet dashboards' },
+        { title: 'Notificaitons', href: '/notifications', description: 'Access notifications' }
       ].map((box) => (
         <Link
           key={box.title}
