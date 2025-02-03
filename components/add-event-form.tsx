@@ -305,7 +305,7 @@ export function AddEventForm({ eventType }: AddEventFormProps) {
         <div className="bg-white rounded-2xl">
           <DatePicker
             selected={startDate}
-            onChange={(date: Date) => setStartDate(date)}
+            onChange={(date: Date | null, event: React.SyntheticEvent<any> | undefined) => setStartDate(date as Date)}
             dateFormat="MMMM d, yyyy"
             className="w-full p-4 text-gray-900 bg-transparent"
           />

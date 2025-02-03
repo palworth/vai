@@ -28,7 +28,7 @@
     "echarts-for-react": "^3.0.2",
     "firebase": "^11.2.0",
     "framer-motion": "^12.0.6",
-    "lucide-react": "^0.471.0",
+    "lucide-react": "^0.471.2",
     "next": "^15.1.4",
     "openai": "^4.78.1",
     "react": "^19.0.0",

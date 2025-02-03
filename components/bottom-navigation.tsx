@@ -1,3 +1,5 @@
+"use client"
+
 import { Home, Map, Bell } from "lucide-react"
 import { findNavigationItem } from "@/utils/navigationUtils"
 import { useRoutes } from "@/hooks/useRoutes"
