@@ -1,7 +1,7 @@
 export const routes = {
     home: "/",
     explore: "/explore",
-    profile: "/profile",
+    profile: "/settings",
     behavior: "/behavior",
     exercise: "/exercise",
     diet: "/diet",
