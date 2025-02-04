@@ -2,9 +2,8 @@ import { SearchBar } from "@/components/search-bar"
 import { EventGrid } from "@/components/event-grid"
 import { GuidedProgramCard } from "@/components/guided-program-card"
 import { CourseList } from "@/components/course-list"
-import { BottomNavigation } from "@/components/bottom-navigation"
 import { FloatingActionButton } from "@/components/floating-action-button"
-import { navigationItems, events, featuredProgram, courses } from "@/constants/navigation"
+import { events, featuredProgram, courses } from "@/constants/navigation"
 
 export default function Home() {
   return (
@@ -19,7 +18,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <BottomNavigation items={navigationItems} />
       <FloatingActionButton />
     </div>
   )
