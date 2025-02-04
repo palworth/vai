@@ -1,22 +1,27 @@
-import { Home, Search, User } from "lucide-react"
+import { Home, Bell, User, Dog } from "lucide-react"
 import type { NavigationItem, EventCard, CourseCard, GuidedProgram } from "../types"
 import { routes } from "@/config/routes"
 
 export const navigationItems: NavigationItem[] = [
   {
-    label: "Today",
-    href: "home",
+    label: "Home",
+    href: "/",
     icon: <Home className="w-6 h-6" />,
   },
   {
-    label: "Explore",
-    href: "explore",
-    icon: <Search className="w-6 h-6" />,
+    label: "Notifications",
+    href: "/notifications",
+    icon: <Bell className="w-6 h-6" />,
   },
   {
-    label: "Katie",
-    href: "profile",
+    label: "settings",
+    href: "/settings",
     icon: <User className="w-6 h-6" />,
+  },
+  {
+    label: "Dogs",
+    href: "/dogs",
+    icon: <Dog className="w-6 h-6" />,
   },
 ]
 
