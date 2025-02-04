@@ -1,104 +1,50 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from "react"
-import Link from "next/link"
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  doc,
-  getDoc
-} from "firebase/firestore"
-import { db } from "@/lib/firebase"
-import { useAuth } from "../contexts/AuthContext"
-
-// Define the structure of a wellness event document.
-interface WellnessEvent {
-  id: string
-  mentalState: string
-  notes: string
-  severity: number
-  eventDate: any  // Firestore Timestamp
-  dogId: any      // DocumentReference for the dog's document
-  dogName?: string // Will be attached after fetching the dog's name
-}
-
-// Helper function to format Firestore Timestamps.
-function formatTimestamp(timestamp: any): string {
-  if (timestamp && typeof timestamp === "object" && "seconds" in timestamp) {
-    const date = new Date(timestamp.seconds * 1000)
-    return date.toLocaleString()
-  }
-  return String(timestamp)
-}
+import { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import Link from "next/link";
 
 export default function WellnessEventsPage() {
-  const { user } = useAuth()
-  const [wellnessEvents, setWellnessEvents] = useState<WellnessEvent[]>([])
-
-  const fetchWellnessEvents = useCallback(async () => {
-    if (!user) return
-    try {
-      // Create a DocumentReference for the current user.
-      const userRef = doc(db, "users", user.uid)
-      // Query wellnessEvents where userId equals the current user's DocumentReference.
-      const wellnessEventsQuery = query(
-        collection(db, "wellnessEvents"),
-        where("userId", "==", userRef),
-        orderBy("eventDate", "desc")
-      )
-      const querySnapshot = await getDocs(wellnessEventsQuery)
-      const events = querySnapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...docSnap.data()
-      })) as WellnessEvent[]
-
-      // For each event, fetch the dog's name from the dogId reference.
-      const eventsWithDogNames = await Promise.all(
-        events.map(async (event) => {
-          if (event.dogId) {
-            try {
-              const dogDoc = await getDoc(event.dogId)
-              if (dogDoc.exists()) {
-                const dogData = dogDoc.data() as { name?: string }
-                return { ...event, dogName: dogData?.name || "Unknown" }
-              }
-            } catch (error) {
-              console.error("Error fetching dog for event", event.id, error)
-            }
-          }
-          return { ...event, dogName: "Unknown" }
-        })
-      )
-      setWellnessEvents(eventsWithDogNames)
-    } catch (error) {
-      console.error("Error fetching wellness events:", error)
-    }
-  }, [user])
+  const { user } = useAuth();
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<any>(null);
 
   useEffect(() => {
-    if (user) {
-      fetchWellnessEvents()
-    }
-  }, [user, fetchWellnessEvents])
+    if (!user) return; // Wait until user is available.
+    // Construct the API URL with the userId query parameter.
+    const url = `/api/wellness-events/data/all_per_user?userId=${user.uid}`;
+
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((json) => {
+        setData(json);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching wellness events:", err);
+        setError(err);
+        setLoading(false);
+      });
+  }, [user]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col p-4">
-      <h1 className="text-4xl font-bold mb-4">Wellness Events</h1>
-      {wellnessEvents.map((event) => (
-        <div key={event.id} className="border p-2 mb-2">
-          <p><strong>Dog Name:</strong> {event.dogName}</p>
-          <p><strong>Event Date:</strong> {formatTimestamp(event.eventDate)}</p>
-          <p><strong>Mental State:</strong> {event.mentalState}</p>
-          <p><strong>Severity:</strong> {event.severity}</p>
-          <p><strong>Notes:</strong> {event.notes}</p>
-        </div>
-      ))}
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Wellness Events JSON</h1>
+      <pre className="bg-gray-100 p-4 rounded">
+        {JSON.stringify(data, null, 2)}
+      </pre>
       <Link href="/" className="mt-4 text-blue-600 hover:underline">
         Back to Home
       </Link>
     </div>
-  )
+  );
 }
