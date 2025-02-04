@@ -1,6 +1,6 @@
 "use client";
 
-import { useRoutes } from "@/hooks/useRoutes";
+
 import type { NavigationItem } from "../types";
 import Link from "next/link";
 import { navigationItems } from "@/constants/navigation";
@@ -12,7 +12,7 @@ interface BottomNavigationProps {
 }
 
 export function BottomNavigation({ items }: BottomNavigationProps) {
-  const { getRoute } = useRoutes();
+
   // Use items from props if provided; otherwise default to navigationItems from constants.
   const navItems = items || navigationItems;
 
