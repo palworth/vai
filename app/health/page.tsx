@@ -5,12 +5,19 @@ import Link from "next/link";
 import { useAuth } from "../contexts/AuthContext";
 import { collection, getDocs, query, where, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import EventSummaryCard from "@/components/EventSummaryCard";
+import type { DataItem } from "@/utils/types";
 
 export default function HealthEventsPage() {
   const { user } = useAuth();
-  const [allEvents, setAllEvents] = useState<any>(null);
+
+  // State for all health events for the user.
+  const [allEvents, setAllEvents] = useState<DataItem[]>([]);
+  // State for the list of dogs associated with the user.
   const [dogs, setDogs] = useState<any[]>([]);
-  const [selectedDogEvents, setSelectedDogEvents] = useState<any>(null);
+  // State for health events for the selected dog.
+  const [selectedDogEvents, setSelectedDogEvents] = useState<DataItem[]>([]);
+  // State for the currently selected dog's id.
   const [selectedDogId, setSelectedDogId] = useState<string>("");
 
   // Fetch all health events for the user.
@@ -20,14 +27,20 @@ export default function HealthEventsPage() {
       const res = await fetch(`/api/health-events/data/all_per_user?userId=${user.uid}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const json = await res.json();
-      setAllEvents(json.healthEvents);
+      // Map each event to include type "health"
+      const events: DataItem[] = json.healthEvents.map((event: any) => ({
+        ...event,
+        type: "health",
+      }));
+      setAllEvents(events);
     } catch (error) {
       console.error("Error fetching all health events:", error);
     }
   }, [user]);
 
   // Fetch all dogs for the user.
-  // Assumes dogs are stored in "dogs" collection and have a field "users" that is an array containing the user's reference.
+  // Assumes dogs are stored in the "dogs" collection and have a "users" field (an array of DocumentReferences)
+  // containing the current user's reference.
   const fetchDogs = useCallback(async () => {
     if (!user) return;
     try {
@@ -44,18 +57,23 @@ export default function HealthEventsPage() {
     }
   }, [user]);
 
-  // Fetch health events for a selected dog.
+  // Fetch health events for a selected dog by calling the API route.
   const fetchEventsByDog = useCallback(async (dogId: string) => {
     try {
       const res = await fetch(`/api/health-events/data/by_dog?dogId=${dogId}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const json = await res.json();
-      setSelectedDogEvents(json.healthEvents);
+      const events: DataItem[] = json.healthEvents.map((event: any) => ({
+        ...event,
+        type: "health",
+      }));
+      setSelectedDogEvents(events);
     } catch (error) {
       console.error("Error fetching health events by dog:", error);
     }
   }, []);
 
+  // On mount, if user exists, fetch all events and dogs.
   useEffect(() => {
     if (user) {
       fetchAllEvents();
@@ -63,13 +81,14 @@ export default function HealthEventsPage() {
     }
   }, [user, fetchAllEvents, fetchDogs]);
 
+  // Handle dog selection from the dropdown.
   const handleDogSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const dogId = e.target.value;
     setSelectedDogId(dogId);
     if (dogId) {
       fetchEventsByDog(dogId);
     } else {
-      setSelectedDogEvents(null);
+      setSelectedDogEvents([]);
     }
   };
 
@@ -80,10 +99,12 @@ export default function HealthEventsPage() {
       {/* Section 1: All health events for the user */}
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-2">All Health Events (Per User)</h2>
-        {allEvents ? (
-          <pre className="bg-gray-100 p-4 rounded">
-            {JSON.stringify(allEvents, null, 2)}
-          </pre>
+        {allEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {allEvents.map((event, index) => (
+              <EventSummaryCard key={index} data={event} />
+            ))}
+          </div>
         ) : (
           <p>Loading all events...</p>
         )}
@@ -111,12 +132,14 @@ export default function HealthEventsPage() {
         <h2 className="text-2xl font-semibold mb-2">
           Health Events for Selected Dog
         </h2>
-        {selectedDogEvents ? (
-          <pre className="bg-gray-100 p-4 rounded">
-            {JSON.stringify(selectedDogEvents, null, 2)}
-          </pre>
+        {selectedDogEvents && selectedDogEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {selectedDogEvents.map((event, index) => (
+              <EventSummaryCard key={index} data={event} />
+            ))}
+          </div>
         ) : (
-          <p>Please select a dog to view its health events.</p>
+          <p>Please select a dog to view its events.</p>
         )}
       </section>
 
