@@ -23,7 +23,7 @@ export function BottomNavigation({ items }: BottomNavigationProps) {
           {navItems.map((item) => (
             <Link
               key={item.label}
-              href={getRoute(item.href)}
+              href={item.href}
               className="flex flex-col items-center gap-1 text-black"
             >
               {item.icon}
