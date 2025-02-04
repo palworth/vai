@@ -5,25 +5,18 @@ import Link from "next/link";
 import { useAuth } from "../contexts/AuthContext";
 import { collection, getDocs, query, where, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-
-// Simple helper to format Firestore timestamps if needed.
-function formatTimestamp(timestamp: any): string {
-  if (timestamp && typeof timestamp === "object" && "seconds" in timestamp) {
-    const date = new Date(timestamp.seconds * 1000);
-    return date.toLocaleString();
-  }
-  return String(timestamp);
-}
+import EventSummaryCard from "@/components/EventSummaryCard";
+import type { DataItem } from "@/utils/types";
 
 export default function BehaviorEventsPage() {
   const { user } = useAuth();
 
   // State for all behavior events for the user.
-  const [allEvents, setAllEvents] = useState<any>(null);
+  const [allEvents, setAllEvents] = useState<DataItem[]>([]);
   // State for the list of dogs for this user.
   const [dogs, setDogs] = useState<any[]>([]);
   // State for the events for the selected dog.
-  const [selectedDogEvents, setSelectedDogEvents] = useState<any>(null);
+  const [selectedDogEvents, setSelectedDogEvents] = useState<DataItem[]>([]);
   // State for the selected dog's id.
   const [selectedDogId, setSelectedDogId] = useState<string>("");
 
@@ -34,21 +27,23 @@ export default function BehaviorEventsPage() {
       const res = await fetch(`/api/behavior-events/data/all_per_user?userId=${user.uid}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const json = await res.json();
-      setAllEvents(json.behaviorEvents);
+      // Map each event and add the type property so it matches our DataItem union.
+      const events: DataItem[] = json.behaviorEvents.map((event: any) => ({
+        ...event,
+        type: "behavior",
+      }));
+      setAllEvents(events);
     } catch (error) {
       console.error("Error fetching all behavior events:", error);
     }
   }, [user]);
 
   // Fetch all dogs for the user.
-  // Assumes that in your Firestore, dogs are stored in "dogs" collection and have a field "users"
-  // which is an array of DocumentReferences. Adjust the query as needed.
+  // Assumes that dogs are stored in "dogs" collection and have a "users" field (an array of DocumentReferences)
   const fetchDogs = useCallback(async () => {
     if (!user) return;
     try {
-      // Create a DocumentReference for the current user.
       const userRef = doc(db, "users", user.uid);
-      // Query dogs where the "users" array contains the current user's reference.
       const dogsQuery = query(collection(db, "dogs"), where("users", "array-contains", userRef));
       const querySnapshot = await getDocs(dogsQuery);
       const dogsList = querySnapshot.docs.map((docSnap) => ({
@@ -67,7 +62,11 @@ export default function BehaviorEventsPage() {
       const res = await fetch(`/api/behavior-events/data/by_dog?dogId=${dogId}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const json = await res.json();
-      setSelectedDogEvents(json.behaviorEvents);
+      const events: DataItem[] = json.behaviorEvents.map((event: any) => ({
+        ...event,
+        type: "behavior",
+      }));
+      setSelectedDogEvents(events);
     } catch (error) {
       console.error("Error fetching behavior events by dog:", error);
     }
@@ -88,7 +87,7 @@ export default function BehaviorEventsPage() {
     if (dogId) {
       fetchEventsByDog(dogId);
     } else {
-      setSelectedDogEvents(null);
+      setSelectedDogEvents([]);
     }
   };
 
@@ -99,10 +98,12 @@ export default function BehaviorEventsPage() {
       {/* Section 1: All events for the user */}
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-2">All Behavior Events (Per User)</h2>
-        {allEvents ? (
-          <pre className="bg-gray-100 p-4 rounded">
-            {JSON.stringify(allEvents, null, 2)}
-          </pre>
+        {allEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {allEvents.map((event, index) => (
+              <EventSummaryCard key={index} data={event} />
+            ))}
+          </div>
         ) : (
           <p>Loading all events...</p>
         )}
@@ -130,10 +131,12 @@ export default function BehaviorEventsPage() {
         <h2 className="text-2xl font-semibold mb-2">
           Behavior Events for Selected Dog
         </h2>
-        {selectedDogEvents ? (
-          <pre className="bg-gray-100 p-4 rounded">
-            {JSON.stringify(selectedDogEvents, null, 2)}
-          </pre>
+        {selectedDogEvents && selectedDogEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {selectedDogEvents.map((event, index) => (
+              <EventSummaryCard key={index} data={event} />
+            ))}
+          </div>
         ) : (
           <p>Please select a dog to view its events.</p>
         )}
