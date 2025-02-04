@@ -5,15 +5,18 @@ import Link from "next/link";
 import { useAuth } from "../contexts/AuthContext";
 import { collection, getDocs, query, where, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import EventSummaryCard from "@/components/EventSummaryCard";
+import type { DataItem } from "@/utils/types";
 
 export default function ExerciseEventsPage() {
   const { user } = useAuth();
+
   // State for all exercise events for the user.
-  const [allEvents, setAllEvents] = useState<any>(null);
-  // State for the list of dogs associated with the user.
+  const [allEvents, setAllEvents] = useState<DataItem[]>([]);
+  // State for the list of dogs for this user.
   const [dogs, setDogs] = useState<any[]>([]);
   // State for exercise events for the selected dog.
-  const [selectedDogEvents, setSelectedDogEvents] = useState<any>(null);
+  const [selectedDogEvents, setSelectedDogEvents] = useState<DataItem[]>([]);
   // State for the currently selected dog's id.
   const [selectedDogId, setSelectedDogId] = useState<string>("");
 
@@ -24,14 +27,19 @@ export default function ExerciseEventsPage() {
       const res = await fetch(`/api/exercise-events/data/all_per_user?userId=${user.uid}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const json = await res.json();
-      setAllEvents(json.exerciseEvents);
+      // Ensure each event has type "exercise" for proper rendering.
+      const events: DataItem[] = json.exerciseEvents.map((event: any) => ({
+        ...event,
+        type: "exercise",
+      }));
+      setAllEvents(events);
     } catch (error) {
       console.error("Error fetching all exercise events:", error);
     }
   }, [user]);
 
   // Fetch all dogs for the user.
-  // Assumes that in Firestore, dogs are stored in "dogs" collection and have a "users" field 
+  // Assumes that in your Firestore, dogs are stored in "dogs" collection and have a "users" field 
   // (an array of DocumentReferences) that includes the current user's reference.
   const fetchDogs = useCallback(async () => {
     if (!user) return;
@@ -55,7 +63,12 @@ export default function ExerciseEventsPage() {
       const res = await fetch(`/api/exercise-events/data/by_dog?dogId=${dogId}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const json = await res.json();
-      setSelectedDogEvents(json.exerciseEvents);
+      // Map each event to include type "exercise"
+      const events: DataItem[] = json.exerciseEvents.map((event: any) => ({
+        ...event,
+        type: "exercise",
+      }));
+      setSelectedDogEvents(events);
     } catch (error) {
       console.error("Error fetching exercise events by dog:", error);
     }
@@ -69,14 +82,14 @@ export default function ExerciseEventsPage() {
     }
   }, [user, fetchAllEvents, fetchDogs]);
 
-  // Handle dog selection from the dropdown.
+  // When a dog is selected, fetch its events.
   const handleDogSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const dogId = e.target.value;
     setSelectedDogId(dogId);
     if (dogId) {
       fetchEventsByDog(dogId);
     } else {
-      setSelectedDogEvents(null);
+      setSelectedDogEvents([]);
     }
   };
 
@@ -87,10 +100,12 @@ export default function ExerciseEventsPage() {
       {/* Section 1: All exercise events for the user */}
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-2">All Exercise Events (Per User)</h2>
-        {allEvents ? (
-          <pre className="bg-gray-100 p-4 rounded">
-            {JSON.stringify(allEvents, null, 2)}
-          </pre>
+        {allEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {allEvents.map((event, index) => (
+              <EventSummaryCard key={index} data={event} />
+            ))}
+          </div>
         ) : (
           <p>Loading all events...</p>
         )}
@@ -118,12 +133,14 @@ export default function ExerciseEventsPage() {
         <h2 className="text-2xl font-semibold mb-2">
           Exercise Events for Selected Dog
         </h2>
-        {selectedDogEvents ? (
-          <pre className="bg-gray-100 p-4 rounded">
-            {JSON.stringify(selectedDogEvents, null, 2)}
-          </pre>
+        {selectedDogEvents && selectedDogEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {selectedDogEvents.map((event, index) => (
+              <EventSummaryCard key={index} data={event} />
+            ))}
+          </div>
         ) : (
-          <p>Please select a dog to view its exercise events.</p>
+          <p>Please select a dog to view its events.</p>
         )}
       </section>
 
