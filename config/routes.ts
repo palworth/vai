@@ -1,11 +1,13 @@
 export const routes = {
     home: "/",
-    explore: "/explore",
     profile: "/settings",
+    dogs: "/dogs",
+    notifications:"/notifications",
+    //Routes to event pages:
     behavior: "/behavior",
     exercise: "/exercise",
-    diet: "/diet",
-    wellness: "/wellness",
+     diet: "/diet",
+     wellness: "/wellness",
     health: "/health",
     courses: {
       meditation: "/courses/meditation",
