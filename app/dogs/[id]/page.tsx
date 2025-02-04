@@ -1,230 +1,117 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { api, type Dog } from "@/lib/api"
-import { useAuth } from "@/app/contexts/AuthContext"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
-import { HealthEventsSection } from "@/app/components/HealthEventsSection"
-import { BehaviorEventsSection } from "@/app/components/BehaviorEventsSection"
-import { DietEventsSection } from "@/app/components/DietEventsSection"
-import { ExerciseEventsSection } from "@/app/components/ExerciseEventsSection"
-import { TrainingPlansSection } from "@/app/components/TrainingPlansSection"
-import { WellnessEventsSection } from "@/app/components/WellnessEventsSection"
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import EventSummaryCard from "../../../components/EventSummaryCard";
+import type { DataItem } from "../../../utils/types";
 
-export default function DogPage() {
-  const params = useParams()
-  const id = params.id as string
+export default function DogDetailPage() {
+  const params = useParams();
+  const dogId = params.id as string;
 
-  const [dog, setDog] = useState<Dog | null>(null)
-  const [isEditing, setIsEditing] = useState(false)
-  const [toastOpen, setToastOpen] = useState(false)
-  const [toastMessage, setToastMessage] = useState({ title: "", description: "", isError: false })
-  const router = useRouter()
-  const { user } = useAuth()
+  const [allEvents, setAllEvents] = useState<DataItem[]>([]);
+  const [recentEvents, setRecentEvents] = useState<DataItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<any>(null);
 
-  const fetchDog = useCallback(async () => {
-    if (!id) return
-    try {
-      const dogData = await api.dogs.get(id)
-      setDog(dogData)
-    } catch (error) {
-      console.error("Error fetching dog:", error)
-      router.push("/dogs")
-    }
-  }, [id, router])
-
+  // Fetch events from all categories for this dog
   useEffect(() => {
-    if (user) {
-      fetchDog()
+    async function fetchAllEventsForDog() {
+      try {
+        const endpoints = [
+          { url: `/api/behavior-events/data/by_dog?dogId=${dogId}`, type: "behavior" },
+          { url: `/api/diet-events/data/by_dog?dogId=${dogId}`, type: "diet" },
+          { url: `/api/exercise-events/data/by_dog?dogId=${dogId}`, type: "exercise" },
+          { url: `/api/health-events/data/by_dog?dogId=${dogId}`, type: "health" },
+          { url: `/api/wellness-events/data/by_dog?dogId=${dogId}`, type: "wellness" },
+        ];
+
+        const responses = await Promise.all(
+          endpoints.map((e) =>
+            fetch(e.url).then((res) => {
+              if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+              }
+              return res.json();
+            })
+          )
+        );
+
+        // Combine the results from all endpoints.
+        let combined: DataItem[] = [];
+        endpoints.forEach((endpoint, i) => {
+          // The API returns an object with key "<type>Events" e.g. "behaviorEvents"
+          const key = endpoint.type + "Events";
+          if (responses[i] && responses[i][key]) {
+            const events: DataItem[] = responses[i][key].map((event: any) => ({
+              ...event,
+              type: endpoint.type, // ensure each event carries its type
+            }));
+            combined = combined.concat(events);
+          }
+        });
+
+        // Sort combined events by eventDate descending.
+        combined.sort(
+          (a, b) =>
+            new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime()
+        );
+
+        setAllEvents(combined);
+        // Top 3 events for the recent section.
+        setRecentEvents(combined.slice(0, 3));
+        setLoading(false);
+      } catch (err: any) {
+        console.error("Error fetching events for dog:", err);
+        setError(err);
+        setLoading(false);
+      }
     }
-  }, [user, fetchDog])
 
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!dog) return
-
-    const updateData: Partial<
-      Omit<
-        Dog,
-        | "id"
-        | "createdAt"
-        | "updatedAt"
-        | "users"
-        | "behaviorEventIds"
-        | "dietEventIds"
-        | "exerciseEventIds"
-        | "healthEventIds"
-      >
-    > = {
-      name: dog.name,
-      breed: dog.breed,
-      age: dog.age,
-      sex: dog.sex,
-      weight: dog.weight,
-      birthday: dog.birthday,
+    if (dogId) {
+      fetchAllEventsForDog();
     }
+  }, [dogId]);
 
-    try {
-      await api.dogs.update(dog.id, updateData)
-      setIsEditing(false)
-      showToast("Dog Updated", "Your dog's information has been successfully updated.", false)
-    } catch (error) {
-      console.error("Error updating dog:", error)
-      showToast("Error", "There was a problem updating your dog's information.", true)
-    }
-  }
-
-  const handleDelete = async () => {
-    if (!dog) return
-    try {
-      await api.dogs.delete(dog.id)
-      router.push("/dogs")
-    } catch (error) {
-      console.error("Error deleting dog:", error)
-      showToast("Error", "There was a problem deleting your dog.", true)
-    }
-  }
-
-  const showToast = (title: string, description: string, isError = false) => {
-    setToastMessage({ title, description, isError })
-    setToastOpen(true)
-
-    setTimeout(() => {
-      setToastOpen(false)
-    }, 2000)
-  }
-
-  if (!dog) {
-    return <div>Loading...</div>
-  }
+  if (loading) return <div>Loading events...</div>;
+  if (error) return <div>Error: {error.message}</div>;
 
   return (
-    <ToastProvider>
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{isEditing ? "Edit Dog Information" : "Dog Information"}</CardTitle>
-            <CardDescription>
-              {isEditing ? "Update your dog's details below" : "View your dog's details"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isEditing ? (
-              <form onSubmit={handleUpdate} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={dog.name}
-                    onChange={(e) => setDog({ ...dog, name: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="breed">Breed</Label>
-                  <Input
-                    id="breed"
-                    value={dog.breed}
-                    onChange={(e) => setDog({ ...dog, breed: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="age">Age</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    value={dog.age}
-                    onChange={(e) => setDog({ ...dog, age: Number.parseInt(e.target.value) })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sex">Sex</Label>
-                  <Select onValueChange={(value) => setDog({ ...dog, sex: value as "male" | "female" })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={dog.sex} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="weight">Weight (lbs)</Label>
-                  <Input
-                    id="weight"
-                    type="number"
-                    value={dog.weight}
-                    onChange={(e) => setDog({ ...dog, weight: Number.parseFloat(e.target.value) })}
-                    required
-                  />
-                </div>
-                <Button type="submit">Update Dog</Button>
-              </form>
-            ) : (
-              <div className="space-y-2">
-                <p>
-                  <strong>Name:</strong> {dog.name}
-                </p>
-                <p>
-                  <strong>Breed:</strong> {dog.breed}
-                </p>
-                <p>
-                  <strong>Age:</strong> {dog.age}
-                </p>
-                <p>
-                  <strong>Sex:</strong> {dog.sex}
-                </p>
-                <p>
-                  <strong>Weight:</strong> {dog.weight} lbs
-                </p>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            {isEditing ? (
-              <Button variant="outline" onClick={() => setIsEditing(false)}>
-                Cancel
-              </Button>
-            ) : (
-              <Button onClick={() => setIsEditing(true)}>Edit</Button>
-            )}
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete Dog
-            </Button>
-          </CardFooter>
-        </Card>
+    <div className="p-4">
+      <h1 className="text-3xl font-bold mb-4">Dog Events</h1>
 
-        <HealthEventsSection dogId={dog.id} showToast={showToast} />
-        <BehaviorEventsSection dogId={dog.id} showToast={showToast} />
-        <DietEventsSection dogId={dog.id} showToast={showToast} />
-        <ExerciseEventsSection dogId={dog.id} showToast={showToast} />
-        <WellnessEventsSection dogId={dog.id} showToast={showToast} />
-        <TrainingPlansSection dogId={dog.id} showToast={showToast} />
-      </div>
+      {/* Section 1: 3 Most Recent Events */}
+      <section className="mb-8">
+        <h2 className="text-2xl font-semibold mb-2">Recent Events</h2>
+        {recentEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recentEvents.map((event, index) => (
+              <EventSummaryCard key={index} data={event} />
+            ))}
+          </div>
+        ) : (
+          <p>No recent events found.</p>
+        )}
+      </section>
 
-      <Toast open={toastOpen} onOpenChange={setToastOpen}>
-        <div
-          className={`${toastMessage.isError ? "bg-red-100 border-red-400" : "bg-green-100 border-green-400"} border-l-4 p-4`}
-        >
-          <ToastTitle className={`${toastMessage.isError ? "text-red-800" : "text-green-800"} font-bold`}>
-            {toastMessage.title}
-          </ToastTitle>
-          <ToastDescription className={`${toastMessage.isError ? "text-red-700" : "text-green-700"}`}>
-            {toastMessage.description}
-          </ToastDescription>
-        </div>
-      </Toast>
-      <ToastViewport />
-    </ToastProvider>
-  )
+      {/* Section 2: All Events for the Dog */}
+      <section className="mb-8">
+        <h2 className="text-2xl font-semibold mb-2">All Events</h2>
+        {allEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {allEvents.map((event, index) => (
+              <EventSummaryCard key={index} data={event} />
+            ))}
+          </div>
+        ) : (
+          <p>No events found for this dog.</p>
+        )}
+      </section>
+
+      <Link href="/dogs" className="text-blue-600 hover:underline">
+        Back to Dogs
+      </Link>
+    </div>
+  );
 }
-
