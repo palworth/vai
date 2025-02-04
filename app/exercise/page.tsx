@@ -2,22 +2,31 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
-import { collection, getDocs, query, where, orderBy, doc, getDoc } from "firebase/firestore"
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  doc,
+  getDoc
+} from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuth } from "../contexts/AuthContext"
 
-// Define the structure of a behavior event document.
-interface BehaviorEvent {
+// Define the structure of an exercise event document.
+interface ExerciseEvent {
   id: string
-  behaviorType: string
-  notes: string
-  severity: number
+  activityType: string
+  source: string
+  distance: number
+  duration: number
   eventDate: any  // Firestore Timestamp
   dogId: any      // DocumentReference to the dog's document
-  dogName?: string  // We'll attach this after fetching
+  dogName?: string // To be attached after fetching the dog's document
 }
 
-// Helper function to format Firestore Timestamp objects.
+// Helper function to format Firestore Timestamps.
 function formatTimestamp(timestamp: any): string {
   if (timestamp && typeof timestamp === "object" && "seconds" in timestamp) {
     const date = new Date(timestamp.seconds * 1000)
@@ -26,27 +35,27 @@ function formatTimestamp(timestamp: any): string {
   return String(timestamp)
 }
 
-export default function BehaviorPage() {
+export default function ExerciseEventsPage() {
   const { user } = useAuth()
-  const [behaviorEvents, setBehaviorEvents] = useState<BehaviorEvent[]>([])
+  const [exerciseEvents, setExerciseEvents] = useState<ExerciseEvent[]>([])
 
-  const fetchBehaviorEvents = useCallback(async () => {
+  const fetchExerciseEvents = useCallback(async () => {
     if (!user) return
     try {
       // Create a DocumentReference for the current user.
       const userRef = doc(db, "users", user.uid)
-      // Query behaviorEvents where userId equals the current user's DocumentReference.
-      const behaviorEventsQuery = query(
-        collection(db, "behaviorEvents"),
+      // Query exerciseEvents where userId equals the current user's DocumentReference,
+      // ordered by eventDate descending.
+      const exerciseEventsQuery = query(
+        collection(db, "exerciseEvents"),
         where("userId", "==", userRef),
         orderBy("eventDate", "desc")
       )
-      const querySnapshot = await getDocs(behaviorEventsQuery)
-      // Map the query snapshot to our events array.
+      const querySnapshot = await getDocs(exerciseEventsQuery)
       const events = querySnapshot.docs.map((docSnap) => ({
         id: docSnap.id,
         ...docSnap.data()
-      })) as BehaviorEvent[]
+      })) as ExerciseEvent[]
 
       // For each event, fetch the dog's name from the dogId reference.
       const eventsWithDogNames = await Promise.all(
@@ -65,28 +74,29 @@ export default function BehaviorPage() {
           return { ...event, dogName: "Unknown" }
         })
       )
-      setBehaviorEvents(eventsWithDogNames)
+      setExerciseEvents(eventsWithDogNames)
     } catch (error) {
-      console.error("Error fetching behavior events:", error)
+      console.error("Error fetching exercise events:", error)
     }
   }, [user])
 
   useEffect(() => {
     if (user) {
-      fetchBehaviorEvents()
+      fetchExerciseEvents()
     }
-  }, [user, fetchBehaviorEvents])
+  }, [user, fetchExerciseEvents])
 
   return (
     <div className="min-h-screen bg-white flex flex-col p-4">
-      <h1 className="text-4xl font-bold mb-4">Behavior</h1>
-      {behaviorEvents.map((event) => (
+      <h1 className="text-4xl font-bold mb-4">Exercise Events</h1>
+      {exerciseEvents.map((event) => (
         <div key={event.id} className="border p-2 mb-2">
-          <p><strong>Dog:</strong> {event.dogName}</p>
-          <p><strong>Type:</strong> {event.behaviorType}</p>
-          <p><strong>Notes:</strong> {event.notes}</p>
-          <p><strong>Severity:</strong> {event.severity}</p>
-          <p><strong>Date:</strong> {formatTimestamp(event.eventDate)}</p>
+          <p><strong>Dog Name:</strong> {event.dogName}</p>
+          <p><strong>Event Date:</strong> {formatTimestamp(event.eventDate)}</p>
+          <p><strong>Activity Type:</strong> {event.activityType}</p>
+          <p><strong>Source:</strong> {event.source}</p>
+          <p><strong>Distance:</strong> {event.distance}</p>
+          <p><strong>Duration:</strong> {event.duration}</p>
         </div>
       ))}
       <Link href="/" className="mt-4 text-blue-600 hover:underline">

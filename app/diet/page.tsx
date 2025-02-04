@@ -2,22 +2,30 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
-import { collection, getDocs, query, where, orderBy, doc, getDoc } from "firebase/firestore"
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  doc,
+  getDoc
+} from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuth } from "../contexts/AuthContext"
 
-// Define the structure of a behavior event document.
-interface BehaviorEvent {
+// Define the structure of a diet event document.
+interface DietEvent {
   id: string
-  behaviorType: string
-  notes: string
-  severity: number
+  foodType: string
+  brandName: string
+  quantity: number
   eventDate: any  // Firestore Timestamp
   dogId: any      // DocumentReference to the dog's document
-  dogName?: string  // We'll attach this after fetching
+  dogName?: string  // Will be attached after fetching the dog's document
 }
 
-// Helper function to format Firestore Timestamp objects.
+// Helper function to format Firestore Timestamps.
 function formatTimestamp(timestamp: any): string {
   if (timestamp && typeof timestamp === "object" && "seconds" in timestamp) {
     const date = new Date(timestamp.seconds * 1000)
@@ -26,27 +34,27 @@ function formatTimestamp(timestamp: any): string {
   return String(timestamp)
 }
 
-export default function BehaviorPage() {
+export default function DietEventsPage() {
   const { user } = useAuth()
-  const [behaviorEvents, setBehaviorEvents] = useState<BehaviorEvent[]>([])
+  const [dietEvents, setDietEvents] = useState<DietEvent[]>([])
 
-  const fetchBehaviorEvents = useCallback(async () => {
+  const fetchDietEvents = useCallback(async () => {
     if (!user) return
     try {
       // Create a DocumentReference for the current user.
       const userRef = doc(db, "users", user.uid)
-      // Query behaviorEvents where userId equals the current user's DocumentReference.
-      const behaviorEventsQuery = query(
-        collection(db, "behaviorEvents"),
+      // Query dietEvents where userId equals the current user's DocumentReference,
+      // ordered by eventDate descending.
+      const dietEventsQuery = query(
+        collection(db, "dietEvents"),
         where("userId", "==", userRef),
         orderBy("eventDate", "desc")
       )
-      const querySnapshot = await getDocs(behaviorEventsQuery)
-      // Map the query snapshot to our events array.
+      const querySnapshot = await getDocs(dietEventsQuery)
       const events = querySnapshot.docs.map((docSnap) => ({
         id: docSnap.id,
         ...docSnap.data()
-      })) as BehaviorEvent[]
+      })) as DietEvent[]
 
       // For each event, fetch the dog's name from the dogId reference.
       const eventsWithDogNames = await Promise.all(
@@ -55,7 +63,7 @@ export default function BehaviorPage() {
             try {
               const dogDoc = await getDoc(event.dogId)
               if (dogDoc.exists()) {
-                const dogData = dogDoc.data() as { name?: string }
+                const dogData = dogDoc.data()as { name?: string }
                 return { ...event, dogName: dogData?.name || "Unknown" }
               }
             } catch (error) {
@@ -65,28 +73,28 @@ export default function BehaviorPage() {
           return { ...event, dogName: "Unknown" }
         })
       )
-      setBehaviorEvents(eventsWithDogNames)
+      setDietEvents(eventsWithDogNames)
     } catch (error) {
-      console.error("Error fetching behavior events:", error)
+      console.error("Error fetching diet events:", error)
     }
   }, [user])
 
   useEffect(() => {
     if (user) {
-      fetchBehaviorEvents()
+      fetchDietEvents()
     }
-  }, [user, fetchBehaviorEvents])
+  }, [user, fetchDietEvents])
 
   return (
     <div className="min-h-screen bg-white flex flex-col p-4">
-      <h1 className="text-4xl font-bold mb-4">Behavior</h1>
-      {behaviorEvents.map((event) => (
+      <h1 className="text-4xl font-bold mb-4">Diet Events</h1>
+      {dietEvents.map((event) => (
         <div key={event.id} className="border p-2 mb-2">
-          <p><strong>Dog:</strong> {event.dogName}</p>
-          <p><strong>Type:</strong> {event.behaviorType}</p>
-          <p><strong>Notes:</strong> {event.notes}</p>
-          <p><strong>Severity:</strong> {event.severity}</p>
-          <p><strong>Date:</strong> {formatTimestamp(event.eventDate)}</p>
+          <p><strong>Dog Name:</strong> {event.dogName}</p>
+          <p><strong>Event Date:</strong> {formatTimestamp(event.eventDate)}</p>
+          <p><strong>Food Type:</strong> {event.foodType}</p>
+          <p><strong>Brand Name:</strong> {event.brandName}</p>
+          <p><strong>Quantity:</strong> {event.quantity}</p>
         </div>
       ))}
       <Link href="/" className="mt-4 text-blue-600 hover:underline">
