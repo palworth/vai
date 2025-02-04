@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { format } from "date-fns"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Plus, Edit2, Trash2 } from "lucide-react"
 
 interface BehaviorEvent {
   id: string
@@ -14,7 +15,7 @@ interface BehaviorEvent {
   createdAt: string
   updatedAt: string
   type: "behavior"
-  behaviorType: string // Changed from eventType to behaviorType
+  behaviorType: string
   notes: string
   severity: number
   eventDate: string
@@ -73,62 +74,63 @@ export function BehaviorEventsSection({ dogId, showToast }: BehaviorEventsSectio
   }
 
   if (error) {
-    return <div>Error: {error}</div>
+    return <div className="text-red-500">{error}</div>
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Behavior Events</CardTitle>
-        <CardDescription>Manage your dog&apos;s behavior events</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Behavior Events</h2>
         <Button
           onClick={() => {
             router.push(`/behavior/add?dogId=${dogId}`)
           }}
+          className="bg-primary text-white"
         >
-          Add Behavior Event
+          <Plus className="w-4 h-4 mr-2" />
+          Add Event
         </Button>
+      </div>
 
-        {isLoading ? (
-          <div>Loading behavior events...</div>
-        ) : (
-          <div className="mt-6 space-y-4">
-            {behaviorEvents.map((event) => (
-              <Card key={event.id}>
-                <CardHeader>
-                  <CardTitle>{event.behaviorType}</CardTitle>
-                  <CardDescription>
+      {isLoading ? (
+        <div className="text-center">Loading behavior events...</div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {behaviorEvents.map((event) => (
+            <Card key={event.id} className="overflow-hidden">
+              <CardContent className="p-0">
+                <div className="bg-primary p-4 text-white">
+                  <h3 className="text-lg font-semibold">{event.behaviorType}</h3>
+                  <p className="text-sm opacity-80">
                     {event.eventDate ? format(new Date(event.eventDate), "MMMM d, yyyy HH:mm") : "No date available"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>
-                    <strong>Severity:</strong> {event.severity}/10
                   </p>
-                  <p>
-                    <strong>Notes:</strong> {event.notes || "No notes provided"}
+                </div>
+                <div className="p-4 space-y-2">
+                  <p className="text-sm">
+                    <span className="font-medium">Severity:</span> {event.severity}/10
                   </p>
-                  <p>
-                    <strong>Event Date:</strong>{" "}
-                    {event.eventDate ? format(new Date(event.eventDate), "MMMM d, yyyy HH:mm") : "N/A"}
+                  <p className="text-sm">
+                    <span className="font-medium">Notes:</span> {event.notes || "No notes provided"}
                   </p>
-                </CardContent>
-                <CardFooter className="flex justify-end space-x-2">
-                  <Link href={`/behavior/${event.id}`} passHref>
-                    <Button variant="outline">View / Edit</Button>
-                  </Link>
-                  <Button variant="destructive" onClick={() => handleDeleteBehaviorEvent(event.id)}>
-                    Delete
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                  <div className="flex justify-end space-x-2 mt-4">
+                    <Link href={`/behavior/${event.id}`} passHref>
+                      <Button variant="outline" size="sm">
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Edit
+                      </Button>
+                    </Link>
+                    <Button variant="destructive" size="sm" onClick={() => handleDeleteBehaviorEvent(event.id)}>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
