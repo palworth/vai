@@ -5,15 +5,18 @@ import Link from "next/link";
 import { useAuth } from "../contexts/AuthContext";
 import { collection, getDocs, query, where, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import EventSummaryCard from "@/components/EventSummaryCard";
+import type { DataItem } from "@/utils/types";
 
 export default function DietEventsPage() {
   const { user } = useAuth();
+
   // State for all diet events for the user.
-  const [allEvents, setAllEvents] = useState<any>(null);
+  const [allEvents, setAllEvents] = useState<DataItem[]>([]);
   // State for the list of dogs associated with the user.
   const [dogs, setDogs] = useState<any[]>([]);
   // State for diet events for the selected dog.
-  const [selectedDogEvents, setSelectedDogEvents] = useState<any>(null);
+  const [selectedDogEvents, setSelectedDogEvents] = useState<DataItem[]>([]);
   // State for the currently selected dog's id.
   const [selectedDogId, setSelectedDogId] = useState<string>("");
 
@@ -24,15 +27,20 @@ export default function DietEventsPage() {
       const res = await fetch(`/api/diet-events/data/all_per_user?userId=${user.uid}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const json = await res.json();
-      setAllEvents(json.dietEvents);
+      // Map each event to include type "diet" so it matches our DataItem union.
+      const events: DataItem[] = json.dietEvents.map((event: any) => ({
+        ...event,
+        type: "diet",
+      }));
+      setAllEvents(events);
     } catch (error) {
       console.error("Error fetching all diet events:", error);
     }
   }, [user]);
 
   // Fetch all dogs for the user.
-  // Assumes that in your Firestore, dogs are stored in the "dogs" collection
-  // and have a "users" field (an array of DocumentReferences) containing the current user's reference.
+  // Assumes that in your Firestore, dogs are stored in the "dogs" collection and have a "users" field
+  // (an array of DocumentReferences) containing the current user's reference.
   const fetchDogs = useCallback(async () => {
     if (!user) return;
     try {
@@ -55,7 +63,11 @@ export default function DietEventsPage() {
       const res = await fetch(`/api/diet-events/data/by_dog?dogId=${dogId}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const json = await res.json();
-      setSelectedDogEvents(json.dietEvents);
+      const events: DataItem[] = json.dietEvents.map((event: any) => ({
+        ...event,
+        type: "diet",
+      }));
+      setSelectedDogEvents(events);
     } catch (error) {
       console.error("Error fetching diet events by dog:", error);
     }
@@ -76,7 +88,7 @@ export default function DietEventsPage() {
     if (dogId) {
       fetchEventsByDog(dogId);
     } else {
-      setSelectedDogEvents(null);
+      setSelectedDogEvents([]);
     }
   };
 
@@ -87,10 +99,12 @@ export default function DietEventsPage() {
       {/* Section 1: All diet events for the user */}
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-2">All Diet Events (Per User)</h2>
-        {allEvents ? (
-          <pre className="bg-gray-100 p-4 rounded">
-            {JSON.stringify(allEvents, null, 2)}
-          </pre>
+        {allEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {allEvents.map((event, index) => (
+              <EventSummaryCard key={index} data={event} />
+            ))}
+          </div>
         ) : (
           <p>Loading all events...</p>
         )}
@@ -118,10 +132,12 @@ export default function DietEventsPage() {
         <h2 className="text-2xl font-semibold mb-2">
           Diet Events for Selected Dog
         </h2>
-        {selectedDogEvents ? (
-          <pre className="bg-gray-100 p-4 rounded">
-            {JSON.stringify(selectedDogEvents, null, 2)}
-          </pre>
+        {selectedDogEvents && selectedDogEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {selectedDogEvents.map((event, index) => (
+              <EventSummaryCard key={index} data={event} />
+            ))}
+          </div>
         ) : (
           <p>Please select a dog to view its diet events.</p>
         )}
