@@ -1,4 +1,5 @@
 export type DataItem = {
+    id:string;
     eventDate: string
     dogName?: string
   } & (
