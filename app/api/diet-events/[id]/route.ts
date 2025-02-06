@@ -13,7 +13,7 @@ import { db } from "@/lib/firebase";
 // @ts-expect-error: Disable implicit any for context parameter.
 export async function GET(request: Request, context) {
   try {
-    const { id } = context.params as { id: string | string[] };
+    const { id } = await context.params as { id: string | string[] };
     const normalizedId = Array.isArray(id) ? id[0] : id;
     const docRef = doc(db, "dietEvents", normalizedId);
     const docSnap = await getDoc(docRef);
@@ -46,7 +46,7 @@ export async function GET(request: Request, context) {
 // @ts-expect-error: Disable implicit any for context parameter.
 export async function PUT(request: Request, context) {
   try {
-    const { id } = context.params as { id: string | string[] };
+    const { id } = await context.params as { id: string | string[] };
     const normalizedId = Array.isArray(id) ? id[0] : id;
     const body = await request.json();
     const docRef = doc(db, "dietEvents", normalizedId);
@@ -77,7 +77,7 @@ export async function PUT(request: Request, context) {
 // @ts-expect-error: Disable implicit any for context parameter.
 export async function DELETE(request: Request, context) {
   try {
-    const { id } = context.params as { id: string | string[] };
+    const { id } = await context.params as { id: string | string[] };
     const normalizedId = Array.isArray(id) ? id[0] : id;
     const docRef = doc(db, "dietEvents", normalizedId);
     await deleteDoc(docRef);
