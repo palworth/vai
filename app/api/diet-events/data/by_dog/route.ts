@@ -47,6 +47,7 @@ export async function GET(request: Request) {
 
     // Transform each event to include only the desired fields.
     const transformedEvents = events.map((event: any) => ({
+      id: event.id,
       eventDate: formatTimestamp(event.eventDate),
       foodType: event.foodType,
       brandName: event.brandName,

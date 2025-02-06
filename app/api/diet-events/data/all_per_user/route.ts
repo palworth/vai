@@ -54,7 +54,7 @@ export async function GET(request: Request) {
           try {
             const dogDoc = await getDoc(event.dogId);
             if (dogDoc.exists()) {
-              const dogData = dogDoc.data() as { name?: string };
+              const dogData = dogDoc.data()as { name?: string };
               dogName = dogData?.name || "Unknown";
             }
           } catch (error) {
@@ -62,6 +62,7 @@ export async function GET(request: Request) {
           }
         }
         return {
+          id: event.id,
           dogName,
           eventDate: formatTimestamp(event.eventDate),
           foodType: event.foodType,
