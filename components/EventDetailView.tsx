@@ -6,6 +6,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { type DataItem, formatDate } from "../utils/types";
+import { EVENT_COLORS } from "../constants/colors";
 
 // Dropdown options for behavior events
 const behaviorTypes = [
@@ -94,20 +95,7 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
   );
 
   const getEventColor = (type: DataItem["type"]): string => {
-    switch (type) {
-      case "behavior":
-        return "#C1693C";
-      case "exercise":
-        return "#3B2B75";
-      case "diet":
-        return "#D65B9D";
-      case "wellness":
-        return "#2B7CD5";
-      case "health":
-        return "#4CAF50";
-      default:
-        return "#000000";
-    }
+    return EVENT_COLORS[type] || EVENT_COLORS.default;
   };
 
   const eventColor = getEventColor(data.type);

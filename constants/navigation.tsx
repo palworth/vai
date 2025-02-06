@@ -1,6 +1,9 @@
-import { Home, Bell, User, Dog } from "lucide-react"
-import type { NavigationItem, EventCard, CourseCard, GuidedProgram } from "../types"
-import { routes } from "@/config/routes"
+// constants/navigation.tsx
+
+import { Home, Bell, User, Dog } from "lucide-react";
+import type { NavigationItem, EventCard, CourseCard, GuidedProgram } from "../types";
+import { routes } from "@/config/routes";
+import { EVENT_COLORS, COURSE_COLORS } from "./colors";
 
 export const navigationItems: NavigationItem[] = [
   {
@@ -23,35 +26,35 @@ export const navigationItems: NavigationItem[] = [
     href: "/dogs",
     icon: <Dog className="w-6 h-6" />,
   },
-]
+];
 
 export const events: EventCard[] = [
   {
     title: "Behavior",
-    backgroundColor: "#C1693C",
+    backgroundColor: EVENT_COLORS.behavior,
     href: "behavior",
   },
   {
     title: "Exercise",
-    backgroundColor: "#3B2B75",
+    backgroundColor: EVENT_COLORS.exercise,
     href: "exercise",
   },
   {
     title: "Diet",
-    backgroundColor: "#D65B9D",
+    backgroundColor: EVENT_COLORS.diet,
     href: "diet",
   },
   {
     title: "Wellness",
-    backgroundColor: "#2B7CD5",
+    backgroundColor: EVENT_COLORS.wellness,
     href: "wellness",
   },
   {
     title: "Health",
-    backgroundColor: "#4CAF50",
+    backgroundColor: EVENT_COLORS.health,
     href: "health",
   },
-]
+];
 
 export const featuredProgram: GuidedProgram = {
   tag: "Guided Program",
@@ -62,20 +65,21 @@ export const featuredProgram: GuidedProgram = {
   minutesPerDay: 10,
   instructor: {
     name: "Kessonga",
-    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/0%20-%20Explore-ndfwvDAikVydBoCp3mce3gk589v9rs.png",
+    image:
+      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/0%20-%20Explore-ndfwvDAikVydBoCp3mce3gk589v9rs.png",
   },
-}
+};
 
 export const courses: CourseCard[] = [
   {
     title: "Beginning Meditation",
-    backgroundColor: "#FF7A00",
-    secondaryColor: "#FFB800",
+    backgroundColor: COURSE_COLORS.meditation.background,
+    secondaryColor: COURSE_COLORS.meditation.secondary,
     href: routes.courses.meditation,
   },
   {
     title: "Reframe Stress and Relax",
-    backgroundColor: "#2B7CD5",
+    backgroundColor: COURSE_COLORS.stress.background,
     href: routes.courses.stress,
     decorativeElements: (
       <div className="absolute top-2 right-2">
@@ -90,9 +94,8 @@ export const courses: CourseCard[] = [
   },
   {
     title: "Anger, Sadness, and Growth",
-    backgroundColor: "#FF69B4",
-    secondaryColor: "#FF4500",
+    backgroundColor: COURSE_COLORS.emotions.background,
+    secondaryColor: COURSE_COLORS.emotions.secondary,
     href: routes.courses.emotions,
   },
-]
-
+];
