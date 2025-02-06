@@ -7,7 +7,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { type DataItem, formatDate } from "../utils/types";
 
-// Dropdown options for behavior events (already defined)
+// Dropdown options for behavior events
 const behaviorTypes = [
   "Barking",
   "Chewing",
@@ -18,7 +18,7 @@ const behaviorTypes = [
   "Fear",
 ];
 
-// Dropdown options for exercise events (used in exercise edit mode)
+// Dropdown options for exercise events
 const exerciseActivities = [
   "Walking",
   "Running/Jogging",
@@ -37,7 +37,7 @@ const exerciseSources = [
   "Apple Health",
 ];
 
-// Dropdown options for wellness events – for Mental State.
+// Dropdown options for wellness events
 const mentalStates = [
   "depressed",
   "anxious",
@@ -75,6 +75,12 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
     } else if (data.type === "wellness") {
       return {
         mentalState: data.mentalState,
+        severity: data.severity,
+        notes: data.notes,
+      };
+    } else if (data.type === "health") {
+      return {
+        eventType: data.eventType,
         severity: data.severity,
         notes: data.notes,
       };
@@ -154,8 +160,14 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
         notes: editData.notes,
         eventDate: editDate.toISOString(),
       };
+    } else if (data.type === "health") {
+      payload = {
+        eventType: editData.eventType,
+        severity: editData.severity,
+        notes: editData.notes,
+        eventDate: editDate.toISOString(),
+      };
     }
-
     try {
       const endpoint = `/api/${data.type}-events/${data.id}`;
       const res = await fetch(endpoint, {
@@ -248,7 +260,9 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
             <>
               <p className="text-xl font-semibold">{behaviorData.behaviorType}</p>
               <p>Severity: {behaviorData.severity}</p>
-              {behaviorData.notes && <p className="mt-4">Notes: {behaviorData.notes}</p>}
+              {behaviorData.notes && (
+                <p className="mt-4">Notes: {behaviorData.notes}</p>
+              )}
             </>
           );
         }
@@ -498,20 +512,88 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
             <>
               <p className="text-xl font-semibold">{wellnessData.mentalState}</p>
               <p>Severity: {wellnessData.severity}</p>
-              {wellnessData.notes && <p className="mt-4">Notes: {wellnessData.notes}</p>}
+              {wellnessData.notes && (
+                <p className="mt-4">Notes: {wellnessData.notes}</p>
+              )}
             </>
           );
         }
       }
       case "health": {
         const healthData = data as Extract<DataItem, { type: "health" }>;
-        return (
-          <>
-            <p className="text-xl font-semibold">{healthData.eventType}</p>
-            <p>Severity: {healthData.severity}</p>
-            {healthData.notes && <p className="mt-4">Notes: {healthData.notes}</p>}
-          </>
-        );
+        if (isEditing) {
+          return (
+            <>
+              <div className="space-y-4">
+                <label className="block font-semibold">Health Event Type:</label>
+                <input
+                  type="text"
+                  value={editData.eventType}
+                  onChange={(e) =>
+                    setEditData({ ...editData, eventType: e.target.value })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Event Date:</label>
+                <DatePicker
+                  selected={editDate}
+                  onChange={(date: Date | null) => setEditDate(date as Date)}
+                  dateFormat="MMMM d, yyyy, h:mm aa"
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Severity:</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={editData.severity}
+                  onChange={(e) =>
+                    setEditData({ ...editData, severity: Number(e.target.value) })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Notes:</label>
+                <textarea
+                  value={editData.notes}
+                  onChange={(e) =>
+                    setEditData({ ...editData, notes: e.target.value })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="mt-4 flex space-x-4">
+                <button
+                  onClick={handleSaveClick}
+                  className="px-4 py-2 bg-green-500 text-white rounded"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 bg-gray-500 text-white rounded"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          );
+        } else {
+          return (
+            <>
+              <p className="text-xl font-semibold">{healthData.eventType}</p>
+              <p>Severity: {healthData.severity}</p>
+              {healthData.notes && (
+                <p className="mt-4">Notes: {healthData.notes}</p>
+              )}
+            </>
+          );
+        }
       }
       default:
         return null;

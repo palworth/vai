@@ -5,7 +5,7 @@ import {
   query,
   where,
   orderBy,
-  doc
+  doc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -30,10 +30,7 @@ export async function GET(request: Request) {
       );
     }
 
-    // Create a DocumentReference for the dog.
     const dogRef = doc(db, "dogs", dogId);
-
-    // Query healthEvents where dogId equals the given dogRef, ordered by eventDate descending.
     const healthEventsQuery = query(
       collection(db, "healthEvents"),
       where("dogId", "==", dogRef),
@@ -45,8 +42,8 @@ export async function GET(request: Request) {
       ...docSnap.data(),
     }));
 
-    // Transform each event to only include: eventDate, eventType, severity, and notes.
     const transformedEvents = events.map((event: any) => ({
+      id: event.id, // Include the id
       eventDate: formatTimestamp(event.eventDate),
       eventType: event.eventType,
       severity: event.severity,

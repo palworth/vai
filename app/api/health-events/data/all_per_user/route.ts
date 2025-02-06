@@ -31,10 +31,7 @@ export async function GET(request: Request) {
       );
     }
 
-    // Create a DocumentReference for the user.
     const userRef = doc(db, "users", userId);
-
-    // Query healthEvents where userId equals the userRef, ordered by eventDate descending.
     const healthEventsQuery = query(
       collection(db, "healthEvents"),
       where("userId", "==", userRef),
@@ -46,7 +43,6 @@ export async function GET(request: Request) {
       ...docSnap.data(),
     }));
 
-    // For each event, fetch the dog's name from the dogId reference and transform the output.
     const transformedEvents = await Promise.all(
       events.map(async (event: any) => {
         let dogName = "Unknown";
@@ -62,6 +58,7 @@ export async function GET(request: Request) {
           }
         }
         return {
+          id: event.id,  // Include the id
           dogName,
           eventDate: formatTimestamp(event.eventDate),
           eventType: event.eventType,
