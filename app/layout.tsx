@@ -1,10 +1,8 @@
-// app/layout.tsx
 import "./globals.css";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "./contexts/AuthContext";
 import { AuthWrapper } from "./components/AuthWrapper";
-import { BottomNavigation } from "@/components/bottom-navigation";
-import { navigationItems } from "@/constants/navigation";
+import { ConditionalBottomNavigation } from "@/components/ConditionalBottomNavigation";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,8 +22,8 @@ export default function RootLayout({
         <AuthProvider>
           <AuthWrapper>
             {children}
-            {/* Ensure only one BottomNavigation is rendered */}
-            <BottomNavigation items={navigationItems} />
+            {/* Conditionally render BottomNavigation */}
+            <ConditionalBottomNavigation />
           </AuthWrapper>
         </AuthProvider>
       </body>
