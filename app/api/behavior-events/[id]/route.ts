@@ -1,11 +1,10 @@
-//comment
 import { NextResponse } from "next/server"
 import { doc, getDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params
+    const { id } = await params;
     const docRef = doc(db, "behaviorEvents", id)
     const docSnap = await getDoc(docRef)
 
@@ -13,6 +12,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       const data = docSnap.data()
       return NextResponse.json({
         id: docSnap.id,
+        type: "behavior", // Ensure that type is included
         ...data,
         dogId: data.dogId?.id || data.dogId, // Convert dogId reference to ID string
         userId: data.userId?.id || data.userId, // Also convert userId for consistency
@@ -29,9 +29,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params
+    const { id } = params
     const body = await request.json()
     const docRef = doc(db, "behaviorEvents", id)
 
@@ -54,9 +54,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params
+    const { id } = params
     const docRef = doc(db, "behaviorEvents", id)
     await deleteDoc(docRef)
     return NextResponse.json({ message: "Event deleted successfully" })
@@ -65,4 +65,3 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
-

@@ -46,7 +46,8 @@ export async function GET(request: Request) {
       ...docSnap.data(),
     }));
 
-    // For each event, fetch the dog's name from the dogId reference and transform the output.
+    // For each event, fetch the dog's name from the dogId reference and transform the output,
+    // including the id.
     const transformedEvents = await Promise.all(
       events.map(async (event: any) => {
         let dogName = "Unknown";
@@ -54,7 +55,7 @@ export async function GET(request: Request) {
           try {
             const dogDoc = await getDoc(event.dogId);
             if (dogDoc.exists()) {
-              const dogData = dogDoc.data()  as { name?: string };
+              const dogData = dogDoc.data() as { name?: string };
               dogName = dogData?.name || "Unknown";
             }
           } catch (error) {
@@ -62,6 +63,7 @@ export async function GET(request: Request) {
           }
         }
         return {
+          id: event.id, // Include the id here as well
           dogName,
           eventDate: formatTimestamp(event.eventDate),
           behaviorType: event.behaviorType,
