@@ -2,6 +2,7 @@ import React from "react";
 import type { DataItem } from "../utils/types";
 import { formatDate } from "../utils/types";
 import { events as eventConfigs } from "../constants/navigation";
+import { useRouter } from "next/navigation";
 
 // Use the events array from your constants file to determine the background color.
 const getCardColor = (type: DataItem["type"]): string => {
@@ -20,6 +21,14 @@ const renderNotes = (notes: string) =>
   ) : null;
 
 const EventSummaryCard: React.FC<{ data: DataItem }> = ({ data }) => {
+  const router = useRouter();
+
+  // When the card is clicked, navigate to the event detail page.
+  const handleClick = () => {
+    // Build the path using the event type (assumed lowercase) and the event id.
+    router.push(`/${data.type}/${data.id}`);
+  };
+
   const renderContent = () => {
     switch (data.type) {
       case "behavior":
@@ -70,7 +79,8 @@ const EventSummaryCard: React.FC<{ data: DataItem }> = ({ data }) => {
 
   return (
     <div
-      className="rounded-xl p-6 shadow-md text-white"
+      onClick={handleClick}
+      className="cursor-pointer rounded-xl p-6 shadow-md text-white"
       style={{ backgroundColor: getCardColor(data.type) }}
     >
       <div className="flex justify-between items-start mb-4">
