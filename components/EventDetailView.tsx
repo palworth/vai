@@ -7,7 +7,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { type DataItem, formatDate } from "../utils/types";
 
-// Options for behavior events – for behavior editing.
+// Dropdown options for behavior (already defined)
 const behaviorTypes = [
   "Barking",
   "Chewing",
@@ -18,11 +18,30 @@ const behaviorTypes = [
   "Fear",
 ];
 
+// Dropdown options for exercise events
+const exerciseActivities = [
+  "Walking",
+  "Running/Jogging",
+  "Fetch",
+  "Hiking",
+  "Dog Park Playtime",
+  "Indoor Play",
+  "Outside Alone Time",
+];
+const exerciseSources = [
+  "Manual Add",
+  "Strava",
+  "Whoop",
+  "Fitbit",
+  "Garmin",
+  "Apple Health",
+];
+
 const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
 
-  // Set up editable state based on event type.
+  // Initialize editable state based on event type.
   const [editData, setEditData] = useState<any>(() => {
     if (data.type === "behavior") {
       return {
@@ -36,11 +55,18 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
         brandName: data.brandName,
         quantity: data.quantity,
       };
+    } else if (data.type === "exercise") {
+      return {
+        activityType: data.activityType,
+        source: data.source,
+        distance: data.distance,
+        duration: data.duration,
+      };
     }
     return {};
   });
 
-  // Common state for editing the event date
+  // Common state for editing the event date.
   const [editDate, setEditDate] = useState<Date>(
     data.eventDate ? new Date(data.eventDate) : new Date()
   );
@@ -72,15 +98,10 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
   const handleDeleteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      // Assuming this route works for behavior events; similar logic applies for diet, etc.
       const endpoint = `/api/${data.type}-events/${data.id}`;
-      const res = await fetch(endpoint, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      // After deletion, navigate back to the list for that event type.
+      const res = await fetch(endpoint, { method: "DELETE" });
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      // After deletion, navigate back to the list for this event type.
       router.push(`/${data.type}`);
     } catch (error) {
       console.error("Error deleting event:", error);
@@ -103,8 +124,16 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
         quantity: editData.quantity,
         eventDate: editDate.toISOString(),
       };
+    } else if (data.type === "exercise") {
+      payload = {
+        activityType: editData.activityType,
+        source: editData.source,
+        distance: editData.distance,
+        duration: editData.duration,
+        eventDate: editDate.toISOString(),
+      };
     }
-    // Extend to other types as needed...
+    // Extend for other types if needed.
 
     try {
       const endpoint = `/api/${data.type}-events/${data.id}`;
@@ -113,9 +142,7 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       setIsEditing(false);
       // Reload the page to show updated event data.
       window.location.reload();
@@ -281,14 +308,100 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
       }
       case "exercise": {
         const exerciseData = data as Extract<DataItem, { type: "exercise" }>;
-        return (
-          <>
-            <p className="text-xl font-semibold">{exerciseData.activityType}</p>
-            <p>Distance: {exerciseData.distance} km</p>
-            <p>Duration: {exerciseData.duration} min</p>
-            <p>Source: {exerciseData.source}</p>
-          </>
-        );
+        if (isEditing) {
+          return (
+            <>
+              <div className="space-y-4">
+                <label className="block font-semibold">Activity Type:</label>
+                <select
+                  value={editData.activityType}
+                  onChange={(e) =>
+                    setEditData({ ...editData, activityType: e.target.value })
+                  }
+                  className="border p-2 rounded w-full"
+                >
+                  <option value="">Select activity type</option>
+                  {exerciseActivities.map((act) => (
+                    <option key={act} value={act}>
+                      {act}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Source:</label>
+                <select
+                  value={editData.source}
+                  onChange={(e) =>
+                    setEditData({ ...editData, source: e.target.value })
+                  }
+                  className="border p-2 rounded w-full"
+                >
+                  <option value="">Select source</option>
+                  {exerciseSources.map((src) => (
+                    <option key={src} value={src}>
+                      {src}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Distance (km):</label>
+                <input
+                  type="number"
+                  value={editData.distance}
+                  onChange={(e) =>
+                    setEditData({ ...editData, distance: Number(e.target.value) })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Duration (min):</label>
+                <input
+                  type="number"
+                  value={editData.duration}
+                  onChange={(e) =>
+                    setEditData({ ...editData, duration: Number(e.target.value) })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Event Date:</label>
+                <DatePicker
+                  selected={editDate}
+                  onChange={(date: Date | null) => setEditDate(date as Date)}
+                  dateFormat="MMMM d, yyyy, h:mm aa"
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="mt-4 flex space-x-4">
+                <button
+                  onClick={handleSaveClick}
+                  className="px-4 py-2 bg-green-500 text-white rounded"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 bg-gray-500 text-white rounded"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          );
+        } else {
+          return (
+            <>
+              <p className="text-xl font-semibold">{exerciseData.activityType}</p>
+              <p>Distance: {exerciseData.distance} km</p>
+              <p>Duration: {exerciseData.duration} min</p>
+              <p>Source: {exerciseData.source}</p>
+            </>
+          );
+        }
       }
       case "wellness": {
         const wellnessData = data as Extract<DataItem, { type: "wellness" }>;

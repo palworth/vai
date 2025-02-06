@@ -64,6 +64,7 @@ export async function GET(request: Request) {
           }
         }
         return {
+          id: event.id,
           dogName,
           eventDate: formatTimestamp(event.eventDate),
           activityType: event.activityType,

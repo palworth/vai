@@ -6,6 +6,7 @@ import {
   where,
   orderBy,
   doc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -45,8 +46,9 @@ export async function GET(request: Request) {
       ...docSnap.data(),
     }));
 
-    // Transform each event to include only the desired fields.
+    // Transform each event to include the desired fields (and include id)
     const transformedEvents = events.map((event: any) => ({
+      id: event.id,
       eventDate: formatTimestamp(event.eventDate),
       activityType: event.activityType,
       source: event.source,
