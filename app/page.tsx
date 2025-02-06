@@ -1,28 +1,25 @@
-import Link from 'next/link'
+import { SearchBar } from "@/components/search-bar"
+import { EventGrid } from "@/components/event-grid"
+import { GuidedProgramCard } from "@/components/guided-program-card"
+import { CourseList } from "@/components/course-list"
+import { FloatingActionButton } from "@/components/floating-action-button"
+import { events, featuredProgram, courses } from "@/constants/navigation"
 
 export default function Home() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-      {[
-        { title: 'Talk to VetAI', href: '/vetai-chat', description: 'Ask general health questions or discuss your dog\'s specific needs' },
-        { title: 'Health & Wellness', href: '/health-wellness', description: 'Monitor health events and mental wellness' },
-        { title: 'Diet & Exercise', href: '/diet-exercise', description: 'Manage your dog\'s nutrition and activity' },
-        { title: 'Behavior', href: '/behavior', description: 'Track and improve your dog\'s behavior' },
-        { title: 'Dogs', href: '/dogs', description: 'View and manage your dogs' },
-        { title: 'Dashboards', href: '/dashboards', description: 'Access overall health and diet dashboards' },
-        { title: 'Notificaitons', href: '/notifications', description: 'Access notifications' }
-      ].map((box) => (
-        <Link
-          key={box.title}
-          href={box.href}
-          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300"
-        >
-          <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900">{box.title}</h3>
-            <p className="mt-2 text-sm text-gray-500">{box.description}</p>
+    <div className="min-h-screen flex flex-col bg-white relative">
+      <div className="flex-grow overflow-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <SearchBar />
+          <div className="pt-16 pb-20">
+            <EventGrid events={events} />
+            <GuidedProgramCard program={featuredProgram} />
+            <CourseList courses={courses} />
           </div>
-        </Link>
-      ))}
+        </div>
+      </div>
+      <FloatingActionButton />
     </div>
   )
 }
+

@@ -1,68 +1,79 @@
-//comment
-import { NextResponse } from "next/server"
-import { doc, getDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from "firebase/firestore"
-import { db } from "@/lib/firebase"
-
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+import { NextResponse } from "next/server";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  serverTimestamp,
+  Timestamp,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+// @ts-expect-error: Disable implicit any for context parameter.
+export async function GET(request: Request, context) {
   try {
-    const { id } = await params
-    const docRef = doc(db, "behaviorEvents", id)
-    const docSnap = await getDoc(docRef)
+    // Assert the type for context.params and normalize the id.
+    const { id } = context.params as { id: string | string[] };
+    const normalizedId = Array.isArray(id) ? id[0] : id;
 
-    if (docSnap.exists()) {
-      const data = docSnap.data()
-      return NextResponse.json({
-        id: docSnap.id,
-        ...data,
-        dogId: data.dogId?.id || data.dogId, // Convert dogId reference to ID string
-        userId: data.userId?.id || data.userId, // Also convert userId for consistency
-        eventDate: data.eventDate?.toDate?.()?.toISOString() || data.eventDate || null,
-        createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
-        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
-      })
-    } else {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 })
+    // IMPORTANT: Make sure that the collection name "behaviorEvents" exactly matches your Firestore collection name.
+    const docRef = doc(db, "behaviorEvents", normalizedId);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
+
+    const data = docSnap.data();
+    return NextResponse.json({
+      id: docSnap.id,
+      type: "behavior", // Ensure that type is included for routing/display
+      ...data,
+      dogId: data.dogId?.id || data.dogId, // Convert reference to string if needed
+      userId: data.userId?.id || data.userId,
+      eventDate: data.eventDate?.toDate?.()?.toISOString() || data.eventDate || null,
+      createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+      updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
+    });
   } catch (error) {
-    console.error("Error fetching behavior event:", error)
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    console.error("Error fetching behavior event:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+// @ts-expect-error: Disable implicit any for context parameter.
+export async function PUT(request: Request, context) {
   try {
-    const { id } = await params
-    const body = await request.json()
-    const docRef = doc(db, "behaviorEvents", id)
+    const { id } = context.params as { id: string | string[] };
+    const normalizedId = Array.isArray(id) ? id[0] : id;
+    const body = await request.json();
+    const docRef = doc(db, "behaviorEvents", normalizedId);
 
-    // Extract only the fields we want to update
-    const { behaviorType, severity, notes, eventDate } = body
-
+    // Extract only the fields we want to update.
+    const { behaviorType, severity, notes, eventDate } = body;
     const updateData = {
       behaviorType,
       severity,
       notes,
       eventDate: eventDate ? Timestamp.fromDate(new Date(eventDate)) : null,
       updatedAt: serverTimestamp(),
-    }
+    };
 
-    await updateDoc(docRef, updateData)
-    return NextResponse.json({ message: "Event updated successfully" })
+    await updateDoc(docRef, updateData);
+    return NextResponse.json({ message: "Event updated successfully" });
   } catch (error) {
-    console.error("Error updating behavior event:", error)
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    console.error("Error updating behavior event:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+// @ts-expect-error: Disable implicit any for context parameter.
+export async function DELETE(request: Request, context) {
   try {
-    const { id } = await params
-    const docRef = doc(db, "behaviorEvents", id)
-    await deleteDoc(docRef)
-    return NextResponse.json({ message: "Event deleted successfully" })
+    const { id } = context.params as { id: string | string[] };
+    const normalizedId = Array.isArray(id) ? id[0] : id;
+    const docRef = doc(db, "behaviorEvents", normalizedId);
+    await deleteDoc(docRef);
+    return NextResponse.json({ message: "Event deleted successfully" });
   } catch (error) {
-    console.error("Error deleting behavior event:", error)
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    console.error("Error deleting behavior event:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-

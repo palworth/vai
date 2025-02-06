@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from "@/components/ui/toast"
 import { TrainingPlanForm } from '@/app/components/TrainingPlanForm'
-import { PageHeader } from '@/components/PageHeader'
 
 interface Dog {
   id: string
@@ -55,7 +54,6 @@ export default function AddTrainingPlanPage() {
   return (
     <ToastProvider>
       <div className="min-h-screen bg-gray-100">
-        <PageHeader title="Add Training Plan" />
         <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
           <Card>
             <CardHeader>
