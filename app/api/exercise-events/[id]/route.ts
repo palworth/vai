@@ -8,11 +8,12 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+// @ts-expect-error: Disable implicit any for context parameter.
+export async function GET(request: Request, context) {
   try {
-    const { id } = params;
-    const docRef = doc(db, "exerciseEvents", id);
+    const { id } = await context.params as { id: string | string[] };
+    const normalizedId = Array.isArray(id) ? id[0] : id;
+    const docRef = doc(db, "exerciseEvents", normalizedId);
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
@@ -35,12 +36,13 @@ export async function GET(request: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+// @ts-expect-error: Disable implicit any for context parameter.
+export async function PUT(request: Request, context) {
   try {
-    const { id } = params;
+    const { id } = await context.params as { id: string | string[] };
+    const normalizedId = Array.isArray(id) ? id[0] : id;
     const body = await request.json();
-    const docRef = doc(db, "exerciseEvents", id);
+    const docRef = doc(db, "exerciseEvents", normalizedId);
 
     const { activityType, duration, distance, source, eventDate } = body;
     const updateData: Record<string, any> = {
@@ -62,11 +64,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+// @ts-expect-error: Disable implicit any for context parameter.
+export async function DELETE(request: Request, context) {
   try {
-    const { id } = params;
-    const docRef = doc(db, "exerciseEvents", id);
+    const { id } =  await context.params as { id: string | string[] };
+    const normalizedId = Array.isArray(id) ? id[0] : id;
+    const docRef = doc(db, "exerciseEvents", normalizedId);
     await deleteDoc(docRef);
     return NextResponse.json({ message: "Event deleted successfully" });
   } catch (error) {

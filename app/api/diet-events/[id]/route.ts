@@ -10,13 +10,12 @@ import {
 import { db } from "@/lib/firebase";
 
 // GET a specific diet event by id.
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+// @ts-expect-error: Disable implicit any for context parameter.
+export async function GET(request: Request, context) {
   try {
-    const { id } = await params;
-    const docRef = doc(db, "dietEvents", id);
+    const { id } = context.params as { id: string | string[] };
+    const normalizedId = Array.isArray(id) ? id[0] : id;
+    const docRef = doc(db, "dietEvents", normalizedId);
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
@@ -39,22 +38,18 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching diet event:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
 // PUT: Update a specific diet event.
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+// @ts-expect-error: Disable implicit any for context parameter.
+export async function PUT(request: Request, context) {
   try {
-    const { id } = params;
+    const { id } = context.params as { id: string | string[] };
+    const normalizedId = Array.isArray(id) ? id[0] : id;
     const body = await request.json();
-    const docRef = doc(db, "dietEvents", id);
+    const docRef = doc(db, "dietEvents", normalizedId);
 
     // Extract the fields we want to update.
     const { foodType, brandName, quantity, eventDate } = body;
@@ -74,28 +69,21 @@ export async function PUT(
     return NextResponse.json({ message: "Event updated successfully" });
   } catch (error) {
     console.error("Error updating diet event:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
 // DELETE: Delete a specific diet event.
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+// @ts-expect-error: Disable implicit any for context parameter.
+export async function DELETE(request: Request, context) {
   try {
-    const { id } = params;
-    const docRef = doc(db, "dietEvents", id);
+    const { id } = context.params as { id: string | string[] };
+    const normalizedId = Array.isArray(id) ? id[0] : id;
+    const docRef = doc(db, "dietEvents", normalizedId);
     await deleteDoc(docRef);
     return NextResponse.json({ message: "Event deleted successfully" });
   } catch (error) {
     console.error("Error deleting diet event:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
