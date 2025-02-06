@@ -48,7 +48,7 @@ export async function GET(request: Request) {
       ...docSnap.data(),
     }));
 
-    // For each event, fetch the dog's name from the dogId reference and transform the data.
+    // Transform each event to include desired fields and the id.
     const transformedEvents = await Promise.all(
       events.map(async (event: any) => {
         let dogName = "Unknown";
@@ -64,6 +64,7 @@ export async function GET(request: Request) {
           }
         }
         return {
+          id: event.id,
           dogName,
           eventDate: formatTimestamp(event.eventDate),
           mentalState: event.mentalState,

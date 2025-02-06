@@ -44,8 +44,9 @@ export async function GET(request: Request) {
       ...docSnap.data(),
     }));
 
-    // Transform each event to include only the fields we care about.
+    // Transform each event to include the desired fields.
     const transformedEvents = events.map((event: any) => ({
+      id: event.id,
       eventDate: formatTimestamp(event.eventDate),
       mentalState: event.mentalState,
       severity: event.severity,

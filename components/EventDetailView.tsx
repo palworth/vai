@@ -7,7 +7,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { type DataItem, formatDate } from "../utils/types";
 
-// Dropdown options for behavior (already defined)
+// Dropdown options for behavior events (already defined)
 const behaviorTypes = [
   "Barking",
   "Chewing",
@@ -18,7 +18,7 @@ const behaviorTypes = [
   "Fear",
 ];
 
-// Dropdown options for exercise events
+// Dropdown options for exercise events (used in exercise edit mode)
 const exerciseActivities = [
   "Walking",
   "Running/Jogging",
@@ -35,6 +35,16 @@ const exerciseSources = [
   "Fitbit",
   "Garmin",
   "Apple Health",
+];
+
+// Dropdown options for wellness events – for Mental State.
+const mentalStates = [
+  "depressed",
+  "anxious",
+  "lethargic",
+  "happy",
+  "loving",
+  "nervous",
 ];
 
 const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
@@ -61,6 +71,12 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
         source: data.source,
         distance: data.distance,
         duration: data.duration,
+      };
+    } else if (data.type === "wellness") {
+      return {
+        mentalState: data.mentalState,
+        severity: data.severity,
+        notes: data.notes,
       };
     }
     return {};
@@ -101,7 +117,6 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
       const endpoint = `/api/${data.type}-events/${data.id}`;
       const res = await fetch(endpoint, { method: "DELETE" });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      // After deletion, navigate back to the list for this event type.
       router.push(`/${data.type}`);
     } catch (error) {
       console.error("Error deleting event:", error);
@@ -132,8 +147,14 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
         duration: editData.duration,
         eventDate: editDate.toISOString(),
       };
+    } else if (data.type === "wellness") {
+      payload = {
+        mentalState: editData.mentalState,
+        severity: editData.severity,
+        notes: editData.notes,
+        eventDate: editDate.toISOString(),
+      };
     }
-    // Extend for other types if needed.
 
     try {
       const endpoint = `/api/${data.type}-events/${data.id}`;
@@ -144,7 +165,6 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
       });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       setIsEditing(false);
-      // Reload the page to show updated event data.
       window.location.reload();
     } catch (error) {
       console.error("Error updating event:", error);
@@ -405,13 +425,83 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
       }
       case "wellness": {
         const wellnessData = data as Extract<DataItem, { type: "wellness" }>;
-        return (
-          <>
-            <p className="text-xl font-semibold">{wellnessData.mentalState}</p>
-            <p>Severity: {wellnessData.severity}</p>
-            {wellnessData.notes && <p className="mt-4">Notes: {wellnessData.notes}</p>}
-          </>
-        );
+        if (isEditing) {
+          return (
+            <>
+              <div className="space-y-4">
+                <label className="block font-semibold">Mental State:</label>
+                <select
+                  value={editData.mentalState}
+                  onChange={(e) =>
+                    setEditData({ ...editData, mentalState: e.target.value })
+                  }
+                  className="border p-2 rounded w-full"
+                >
+                  <option value="">Select mental state</option>
+                  {mentalStates.map((state) => (
+                    <option key={state} value={state}>
+                      {state}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Event Date:</label>
+                <DatePicker
+                  selected={editDate}
+                  onChange={(date: Date | null) => setEditDate(date as Date)}
+                  dateFormat="MMMM d, yyyy, h:mm aa"
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Severity:</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={editData.severity}
+                  onChange={(e) =>
+                    setEditData({ ...editData, severity: Number(e.target.value) })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Notes:</label>
+                <textarea
+                  value={editData.notes}
+                  onChange={(e) =>
+                    setEditData({ ...editData, notes: e.target.value })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="mt-4 flex space-x-4">
+                <button
+                  onClick={handleSaveClick}
+                  className="px-4 py-2 bg-green-500 text-white rounded"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 bg-gray-500 text-white rounded"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          );
+        } else {
+          return (
+            <>
+              <p className="text-xl font-semibold">{wellnessData.mentalState}</p>
+              <p>Severity: {wellnessData.severity}</p>
+              {wellnessData.notes && <p className="mt-4">Notes: {wellnessData.notes}</p>}
+            </>
+          );
+        }
       }
       case "health": {
         const healthData = data as Extract<DataItem, { type: "health" }>;
