@@ -51,7 +51,7 @@ export default function TestChatPage() {
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!input.trim() || !user || !selectedDogId) return;
-
+  
     // Append the user's message to the chat history.
     const newHistory: ChatEntry[] = [
       ...chatHistory,
@@ -61,18 +61,17 @@ export default function TestChatPage() {
     const messageToSend = input;
     setInput("");
     setLoading(true);
-
+  
     try {
       // Retrieve the token using user.getIdToken()
       const token = await user.getIdToken();
+  
       // Pass the Firebase ID token via the Authorization header.
-      console.log(`Bearer ${token}`)
       const res = await fetch("/api/test-chat", {
         method: "POST",
-       
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          "Authorization": `Bearer ${token}`, // Set the Authorization header
         },
         body: JSON.stringify({
           message: messageToSend,
@@ -80,21 +79,12 @@ export default function TestChatPage() {
           dogId: selectedDogId,
         }),
       });
-      const data = await res.json();
-      setChatHistory([
-        ...newHistory,
-        { sender: "Bot", message: data.response || "No response" },
-      ]);
+      // ... (rest of your code)
     } catch (error) {
-      console.error("Error generating response:", error);
-      setChatHistory([
-        ...newHistory,
-        { sender: "Bot", message: "Sorry, an error occurred." },
-      ]);
+      // ... (Error handling)
     }
     setLoading(false);
   };
-
   return (
     <div
       style={{

@@ -16,6 +16,7 @@
     "node": "22"
   },
   "dependencies": {
+    "@genkit-ai/dotprompt": "^0.9.12",
     "@genkit-ai/firebase": "^0.9.12",
     "@genkit-ai/vertexai": "^0.9.12",
     "express": "^4.21.2",

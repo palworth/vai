@@ -1,6 +1,7 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as dotenv from "dotenv";
+import { onDocumentWritten } from "firebase-functions/v2/firestore";
 
 // Load environment variables from the .env file
 dotenv.config();
@@ -21,16 +22,23 @@ if (!admin.apps.length) {
 // Export your Firebase Admin instances
 export const adminDb = admin.database(); // For Realtime Database
 export const adminFirestore = admin.firestore(); // For Cloud Firestore
-
 // Example: Accessing Realtime Database
 export const getRealtimeData = functions.https.onRequest(async (req, res) => {
   try {
     const path = req.query.path; // Get path from query parameter
     if (!path) {
-      return res.status(400).send('Missing path parameter');
+      res.status(400).send('Missing path parameter');
+      return;
     }
 
-    const snapshot = await adminDb.ref(path).once('value');
+    // Convert path to a string
+    const pathString = Array.isArray(path) ? path[0] : String(path);
+    if (typeof pathString !== 'string') {
+      res.status(400).send('Invalid path parameter');
+      return;
+    }
+
+    const snapshot = await adminDb.ref(pathString).once('value');
     const data = snapshot.val();
     res.status(200).json(data);
   } catch (error) {
@@ -38,16 +46,19 @@ export const getRealtimeData = functions.https.onRequest(async (req, res) => {
     res.status(500).send('Error fetching data');
   }
 });
-
 // Example: Accessing Cloud Firestore
 export const getFirestoreData = functions.https.onRequest(async (req, res) => {
   try {
-    const collectionName = req.query.collection; // Get collection name from query parameter
-    const docId = req.query.docId; // Get document ID from query parameter
-
-    if (!collectionName) {
-      return res.status(400).send('Missing collection parameter');
+    const collectionName = Array.isArray(req.query.collection) 
+      ? req.query.collection[0] 
+      : String(req.query.collection);
+    
+    if (typeof collectionName !== 'string') {
+      res.status(400).send('Invalid collection parameter');
+      return;
     }
+
+    const docId = req.query.docId ? String(req.query.docId) : undefined;
 
     const collectionRef = adminFirestore.collection(collectionName);
     if (docId) {
@@ -66,12 +77,11 @@ export const getFirestoreData = functions.https.onRequest(async (req, res) => {
 });
 
 // Example: Triggered by a Firestore document write
-export const onDocumentWrite = functions.firestore.document('users/{userId}').onWrite(async (change, context) => {
-  const before = change.before.data();
-  const after = change.after.data();
+export const onDocumentWrite = onDocumentWritten("users/{userId}", async (event) => {
+  const before = event.data?.before?.data();
+  const after = event.data?.after?.data();
 
-  // Perform actions based on the document change
-  console.log('Document updated:', context.params.userId);
+  console.log('Document updated:', event.params.userId);
   console.log('Before:', before);
   console.log('After:', after);
 });
