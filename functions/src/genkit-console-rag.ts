@@ -1,10 +1,10 @@
-// functions/src/console-rag.ts
-// to run with google helper, do genkit start -- tsx --watch functions/src/genkit-console-rag.ts
+// functions/src/genkit-console-rag.ts
+// To run with the Google helper, do: genkit start -- tsx --watch functions/src/genkit-console-rag.ts
 
 import { genkit } from "genkit";
 import * as admin from "firebase-admin";
 import dotenv from "dotenv";
-import { vertexAI, gemini15Flash } from "@genkit-ai/vertexai";
+import { vertexAI } from "@genkit-ai/vertexai";
 
 // Load environment variables from .env.local (if needed)
 dotenv.config({ path: "./.env.local" });
@@ -16,16 +16,19 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
-// Create your Genkit instance.
+
 const ai = genkit({
+  promptDir: "./prompts",
   plugins: [
     vertexAI({ location: "us-central1" }),
   ],
 });
 
-// Hardcoded test values.
+// Define a helper for rendering objects as formatted JSON.
+ai.defineHelper("json", (obj: unknown) => JSON.stringify(obj, null, 2));
+
+// Hardcoded test value.
 const testDogId = "BehmMIAzpENDWfWtAVdI"; // Replace with a valid dog document ID from your Firestore.
-const testQuestion = "What is a healthy diet for my dog?";
 
 (async () => {
   try {
@@ -46,64 +49,74 @@ const testQuestion = "What is a healthy diet for my dog?";
     };
     console.log("Simplified Dog Data:", simplifiedDogData);
 
-    // Fetch diet events for the dog.
-    const dietSnapshot = await db.collection("dietEvents")
-      .where("dogId", "==", dogRef)
-      .get();
-    const dietEvents = dietSnapshot.docs.map(doc => doc.data());
-    console.log("Diet Events:", dietEvents);
+    // Fetch raw events from Firestore.
+    const dietRaw = (await db.collection("dietEvents").where("dogId", "==", dogRef).get()).docs.map(doc => doc.data());
+    const behaviorRaw = (await db.collection("behaviorEvents").where("dogId", "==", dogRef).get()).docs.map(doc => doc.data());
+    const exerciseRaw = (await db.collection("exerciseEvents").where("dogId", "==", dogRef).get()).docs.map(doc => doc.data());
+    const healthRaw = (await db.collection("healthEvents").where("dogId", "==", dogRef).get()).docs.map(doc => doc.data());
+    const wellnessRaw = (await db.collection("wellnessEvents").where("dogId", "==", dogRef).get()).docs.map(doc => doc.data());
 
-    // Fetch behavior events for the dog.
-    const behaviorSnapshot = await db.collection("behaviorEvents")
-      .where("dogId", "==", dogRef)
-      .get();
-    const behaviorEvents = behaviorSnapshot.docs.map(doc => doc.data());
-    console.log("Behavior Events:", behaviorEvents);
+    // Clean up each events array by selecting only the desired fields.
+    const dietEvents = dietRaw.map(e => ({
+      foodType: e.foodType,
+      brandName: e.brandName,
+      eventDate: e.eventDate
+    }));
 
-    // Fetch exercise events for the dog.
-    const exerciseSnapshot = await db.collection("exerciseEvents")
-      .where("dogId", "==", dogRef)
-      .get();
-    const exerciseEvents = exerciseSnapshot.docs.map(doc => doc.data());
-    console.log("Exercise Events:", exerciseEvents);
+    const behaviorEvents = behaviorRaw.map(e => ({
+      behaviorType: e.behaviorType,
+      severity: e.severity,
+      notes: e.notes,
+      eventDate: e.eventDate
+    }));
 
-    // Fetch health events for the dog.
-    const healthSnapshot = await db.collection("healthEvents")
-      .where("dogId", "==", dogRef)
-      .get();
-    const healthEvents = healthSnapshot.docs.map(doc => doc.data());
-    console.log("Health Events:", healthEvents);
+    const exerciseEvents = exerciseRaw.map(e => ({
+      eventDate: e.eventDate,
+      activityType: e.activityType,
+      duration: e.duration,
+      distance: e.distance,
+      source: e.source
+    }));
 
-    // Fetch wellness events for the dog.
-    const wellnessSnapshot = await db.collection("wellnessEvents")
-      .where("dogId", "==", dogRef)
-      .get();
-    const wellnessEvents = wellnessSnapshot.docs.map(doc => doc.data());
-    console.log("Wellness Events:", wellnessEvents);
+    const healthEvents = healthRaw.map(e => ({
+      eventType: e.eventType,
+      severity: e.severity,
+      notes: e.notes,
+      eventDate: e.eventDate
+    }));
 
-    // Construct the prompt.
-    const prompt = `
-      You are a helpful dog vet chatbot.
-      Here is information about the dog: ${JSON.stringify(simplifiedDogData)}
-      Here are the dog's diet events: ${JSON.stringify(dietEvents)}
-      Here are the dog's behavior events: ${JSON.stringify(behaviorEvents)}
-      Here are the dog's exercise events: ${JSON.stringify(exerciseEvents)}
-      Here are the dog's health events: ${JSON.stringify(healthEvents)}
-      Here are the dog's wellness events: ${JSON.stringify(wellnessEvents)}
-      The user asked: ${testQuestion}
-      Please provide a helpful and informative response.
-    `;
-    console.log("Prompt:", prompt);
+    const wellnessEvents = wellnessRaw.map(e => ({
+      type: e.type,
+      mentalState: e.mentalState, // assuming the field is "mentalState" (not "metalState")
+      severity: e.severity,
+      notes: e.notes,
+      eventDate: e.eventDate
+    }));
 
-    // Generate a response using the Gemini model.
-    const llmResponse = await ai.generate({
-      model: gemini15Flash,
-      prompt,
-      config: { temperature: 0.7 },
-    });
+    console.log("Cleaned Diet Events:", dietEvents);
+    console.log("Cleaned Behavior Events:", behaviorEvents);
+    console.log("Cleaned Exercise Events:", exerciseEvents);
+    console.log("Cleaned Health Events:", healthEvents);
+    console.log("Cleaned Wellness Events:", wellnessEvents);
 
-    console.log("LLM Response:", llmResponse.text);
+    // Prepare input for the prompt.
+    const promptInput = {
+      simplifiedDogData,
+      dietEvents,
+      behaviorEvents,
+      exerciseEvents,
+      healthEvents,
+      wellnessEvents,
+      testQuestion: "What is a healthy diet for my dog?"
+    };
+
+    // Load and call the prompt by its registered name ("dog-vet-prompt").
+    const promptOutput = await ai.prompt("dog-vet-prompt")(promptInput);
+
+    // Log the rendered prompt (if your prompt file uses the json helper, the objects will be stringified).
+    console.log("LLM Response:", promptOutput.text);
   } catch (error) {
     console.error("Error generating LLM response:", error);
   }
 })();
+// 
