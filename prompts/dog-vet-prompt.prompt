@@ -18,5 +18,5 @@ Here are the dog's behavior events: {{json behaviorEvents}}
 Here are the dog's exercise events: {{json exerciseEvents}}
 Here are the dog's health events: {{json healthEvents}}
 Here are the dog's wellness events: {{json wellnessEvents}}
-The user asked: could you give me a summary of aruthurs wellness recently
+The user asked: {{testQuestion}}
 Please provide a helpful and informative response.
