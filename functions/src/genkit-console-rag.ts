@@ -1,4 +1,5 @@
-// functions/src/genkit-console-firestore.ts
+// functions/src/console-rag.ts
+// to run with google helper, do genkit start -- tsx --watch functions/src/genkit-console-rag.ts
 
 import { genkit } from "genkit";
 import * as admin from "firebase-admin";
