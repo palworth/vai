@@ -1,7 +1,6 @@
 // app/api/rag-chat/route.ts
 import { NextResponse } from "next/server";
 import { generateDogResponse } from "@/functions/src/genkit-rag-chat-flow";
-console.log("firebaseAdmin.ts is being loaded");
 
 
 export async function POST(request: Request) {

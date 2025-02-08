@@ -1,24 +1,25 @@
 // lib/firebaseAdmin.ts
-import * as admin from "firebase-admin";
 
+import * as admin from 'firebase-admin';
+
+// Initialize Firebase Admin SDK
+let adminApp: admin.app.App;
+
+// Check if the app is already initialized
 if (!admin.apps.length) {
-  const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!serviceAccountString) {
-    throw new Error("Missing FIREBASE_SERVICE_ACCOUNT environment variable.");
-  }
-  const serviceAccount = JSON.parse(serviceAccountString);
-  console.log("Parsed service account:", serviceAccount)
-
-  // Ensure serviceAccount.project_id exists and is a string
-  if (typeof serviceAccount.project_id !== "string") {
-    throw new Error("Service account object must contain a string 'project_id' property.");
-  }
-
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+  // Initialize the app if it's not already initialized
+  const serviceAccount = require('@/config/vai2-80fb0-4b4946372e42.json'); // Replace with your actual path
+  adminApp = admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
   });
 } else {
-  admin.app();
+  // Use the existing app if it's already initialized
+  adminApp = admin.app();
 }
 
-export const db = admin.firestore();
+// Export the Firestore instance
+export const db = adminApp.firestore();
+
+// (Optional) Export other Firebase services if needed
+// export const auth = adminApp.auth();
+// export const storage = adminApp.storage();

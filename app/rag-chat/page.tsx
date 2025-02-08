@@ -15,6 +15,7 @@ export default function RagChatPage() {
   const [isGeneralChat, setIsGeneralChat] = useState(false)
   const { user } = useAuth()
 
+  
   // Fetch user's dogs for the dropdown.
   const fetchUserDogs = useCallback(async () => {
     if (!user) return
