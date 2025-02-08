@@ -1,19 +1,24 @@
 // lib/firebaseAdmin.ts
 
 import * as admin from "firebase-admin";
-import serviceAccount from "@/config/vai2-80fb0-4b4946372e42.json";
 
-let adminApp: admin.app.App;
-
+// Ensure your environment variable is loaded (using dotenv if needed)
+// dotenv.config() is typically called in your app's entry point.
 if (!admin.apps.length) {
-  adminApp = admin.initializeApp({
+  const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!serviceAccountString) {
+    throw new Error("Missing FIREBASE_SERVICE_ACCOUNT environment variable.");
+  }
+  const serviceAccount = JSON.parse(serviceAccountString);
+
+  admin.initializeApp({
     credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
   });
 } else {
-  adminApp = admin.app();
+  admin.app();
 }
 
-export const db = adminApp.firestore();
-// (Optional) Export other Firebase services if needed
-// export const auth = adminApp.auth();
-// export const storage = adminApp.storage();
+export const db = admin.firestore();
+// Optionally, export other services:
+// export const auth = admin.auth();
+// export const storage = admin.storage();
