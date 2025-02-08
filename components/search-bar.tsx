@@ -1,28 +1,22 @@
 "use client"
 
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
 import { Search } from "lucide-react"
 
-export function SearchBar() {
+export function SearchBarButton() {
+  const router = useRouter()
+
   return (
-    <div className="fixed top-0 left-0 right-0 bg-white z-30 px-4 py-3 border-b shadow-sm">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-        <textarea
-          placeholder="Talk to vetAI"
-          className="w-full pl-10 pr-3 py-3 bg-gray-100 border-none rounded-full text-lg resize-none overflow-hidden"
-          style={{
-            height: "3rem",
-            lineHeight: "1.5rem",
-            maxHeight: "6rem",
-            minHeight: "3rem",
-          }}
-          onInput={(e) => {
-            e.currentTarget.style.height = "3rem"
-            e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`
-          }}
-        />
-      </div>
+    <div className="fixed top-0 left-0 right-0 z-30 px-4 py-3 border-b shadow-sm">
+      <Button
+        variant="secondary"
+        className="w-full h-12 flex items-center justify-start bg-gradient-to-r from-purple-500/10 to-orange-500/10 hover:from-purple-500/20 hover:to-orange-500/20 rounded-full text-lg"
+        onClick={() => router.push("/rag-chat")}
+      >
+        <Search className="mr-3 text-gray-400 w-5 h-5" />
+        Talk to vetAI
+      </Button>
     </div>
   )
 }
-
