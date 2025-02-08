@@ -1,5 +1,7 @@
 // functions/src/genkit-console-rag.ts
 // To run with the Google helper, do: genkit start -- tsx --watch functions/src/genkit-console-rag.ts
+/* eslint-disable */
+
 
 import { genkit } from "genkit";
 import * as admin from "firebase-admin";
