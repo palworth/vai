@@ -12,6 +12,8 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { collection, query, where, getDocs, doc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 interface Message {
   role: "user" | "assistant"
@@ -66,19 +68,16 @@ export default function RagChatPage() {
 
     const userMessage: Message = { role: "user", content: input }
     setMessages((prev) => [...prev, userMessage])
+    const currentInput = input // capture current input
     setInput("")
     setIsLoading(true)
 
     try {
-      // Call our API endpoint to get the assistant's reply.
-      // (Replace "/api/chat" with your actual API endpoint when ready.)
-      const response = await fetch("/api/chat", {
+      const response = await fetch("/api/rag-chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: [...messages, userMessage],
+          testQuestion: currentInput, // send the message as testQuestion
           dogId: isGeneralChat ? null : selectedDogId,
           userId: user?.uid,
           isGeneralChat,
@@ -150,7 +149,13 @@ export default function RagChatPage() {
               {messages.map((message, idx) => (
                 <div key={idx} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                   <div className={`rounded-lg p-2 max-w-[70%] ${message.role === "user" ? "bg-blue-500 text-white" : "bg-gray-200"}`}>
-                    {message.content}
+                    {message.role === "assistant" ? (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.content}
+                      </ReactMarkdown>
+                    ) : (
+                      message.content
+                    )}
                   </div>
                 </div>
               ))}
