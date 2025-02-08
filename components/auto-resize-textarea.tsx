@@ -69,24 +69,14 @@ export const AutoResizeTextarea = React.forwardRef<{ resetHeight: () => void }, 
     }, [adjustHeight])
 
     return (
-      // This is a native HTML textarea element that:
-      // 1. Auto-resizes based on content using the textareaRef and adjustHeight function
-      // 2. Maintains a minimum and maximum height
-      // 3. Supports controlled input through value and onChange props
-      // 4. Has custom styling for a modern, clean look
       <textarea
-        // Ref used to directly manipulate the textarea's height
         ref={textareaRef}
-        // Controlled input value from parent component
         value={value}
-        // Event handler for text changes
         onChange={onChange}
-        // Add an onInput handler to the textarea
         onInput={() => {
           // Immediately adjust height on input
           requestAnimationFrame(adjustHeight)
         }}
-        // Start with single row (height will be controlled by minHeight)
         rows={1}
         className={cn(
           "flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
@@ -95,7 +85,6 @@ export const AutoResizeTextarea = React.forwardRef<{ resetHeight: () => void }, 
           "disabled:opacity-50 resize-none overflow-y-auto transition-all duration-200",
           className,
         )}
-        // Enforce minimum height through inline styles
         style={{
           minHeight: `${minHeight}px`,
           height: minHeight,
@@ -103,6 +92,7 @@ export const AutoResizeTextarea = React.forwardRef<{ resetHeight: () => void }, 
         {...props}
       />
     )
-  },
+  }
 )
 
+AutoResizeTextarea.displayName = "AutoResizeTextarea"

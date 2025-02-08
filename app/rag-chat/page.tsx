@@ -24,7 +24,9 @@ export default function RagChatPage() {
     )
     const querySnapshot = await getDocs(dogsQuery)
     const dogsData = querySnapshot.docs.map((docSnap) => {
-      const { id: _ignored, ...data } = docSnap.data() as Record<string, any>
+      // Spread the document data and remove any "id" property from the data.
+      const data = { ...docSnap.data() } as Record<string, any>
+      delete data.id
       return { id: docSnap.id, ...data } as Dog
     })
     setDogs(dogsData)
@@ -68,11 +70,11 @@ export default function RagChatPage() {
       const data = await response.json()
       const aiMsg: Message = { role: "assistant", content: data.content }
       setMessages((prev) => [...prev, aiMsg])
-    } catch (error) {
-      console.error("Error sending message:", error)
+    } catch (err) {
+      console.error("Error sending message:", err)
       const errorMsg: Message = {
         role: "assistant",
-        content: `Error: ${error instanceof Error ? error.message : "An unknown error occurred"}`,
+        content: `Error: ${err instanceof Error ? err.message : "An unknown error occurred"}`,
       }
       setMessages((prev) => [...prev, errorMsg])
     } finally {
