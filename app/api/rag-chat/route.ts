@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { generateDogResponse } from  "@/functions/src/genkit-rag-chat-flow";
 
 export async function POST(request: Request) {
   try {
@@ -9,11 +10,6 @@ export async function POST(request: Request) {
         content: "General chat functionality not implemented yet.",
       });
     }
-
-    // Dynamically import only when it's needed
-    const { generateDogResponse } = await import(
-      "@/functions/src/genkit-rag-chat-flow"
-    );
 
     const responseText = await generateDogResponse({ dogId, testQuestion });
     return NextResponse.json({ content: responseText });
