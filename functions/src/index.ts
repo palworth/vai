@@ -1,6 +1,6 @@
 // functions/src/index.ts
 
-import { onCallGenkit } from 'firebase-functions/https';
+import { onCallGenkit,isSignedIn } from 'firebase-functions/https';
 // import { hasClaim } from 'firebase-functions/https';
 import { genkit, z } from 'genkit';
 import { generateDogResponse } from './genkit-rag-chat-flow';
@@ -61,6 +61,7 @@ export const generateDogResponseFunction = onCallGenkit(
   {
     // authPolicy: hasClaim("email_verified"),
     // enforceAppCheck: true,
+    authPolicy: isSignedIn(),
     cors: "http://localhost:3000",
   },
   dogResponseAction

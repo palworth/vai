@@ -1,19 +1,26 @@
 "use client"
 
-import { useState, useEffect, useCallback, FormEvent } from "react"
-import { useAuth } from "@/app/contexts/AuthContext"
-import { collection, query, where, getDocs, doc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
-import { ChatInterface, Message, Dog } from "@/components/ChatInterface"
+import { useState, useEffect, useCallback, FormEvent } from "react";
+import { useAuth } from "@/app/contexts/AuthContext";
+import { collection, query, where, getDocs, doc } from "firebase/firestore";
+import { db, functions } from "@/lib/firebase"; // Ensure your lib/firebase exports your functions instance
+import { ChatInterface, Message, Dog } from "@/components/ChatInterface";
+import { getFunctions, httpsCallable, connectFunctionsEmulator } from "firebase/functions";
+
+// If in development, connect to the Functions emulator:
+if (process.env.NODE_ENV === "development") {
+  // This will ensure that the functions instance points to your local emulator
+  connectFunctionsEmulator(functions, "localhost", 5001);
+}
 
 export default function RagChatPage() {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [dogs, setDogs] = useState<Dog[]>([])
-  const [selectedDogId, setSelectedDogId] = useState<string | null>(null)
-  const [isGeneralChat, setIsGeneralChat] = useState(false)
-  const { user } = useAuth()
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [dogs, setDogs] = useState<Dog[]>([]);
+  const [selectedDogId, setSelectedDogId] = useState<string | null>(null);
+  const [isGeneralChat, setIsGeneralChat] = useState(false);
+  const { user } = useAuth();
 
   // Fetch user's dogs for the dropdown.
   const fetchUserDogs = useCallback(async () => {
@@ -40,7 +47,7 @@ export default function RagChatPage() {
     }
   }, [user, fetchUserDogs]);
 
-  // Send message handler.
+  // Updated onSubmit handler that calls the Cloud Function directly
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (input.trim() === "" || (!selectedDogId && !isGeneralChat)) return;
@@ -52,26 +59,24 @@ export default function RagChatPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/rag-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          testQuestion: currentInput,
-          dogId: isGeneralChat ? null : selectedDogId,
-          userId: user?.uid,
-          isGeneralChat,
-        }),
-      });
+      // Create a callable reference to the Cloud Function directly
+      const generateDogResponseCallable = httpsCallable(functions, "generateDogResponseFunction");
+      const result = await generateDogResponseCallable({ dogId: isGeneralChat ? null : selectedDogId, testQuestion: currentInput });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to get response from API");
+      // Log the response for debugging
+      console.log("Result from Cloud Function:", result.data);
+      
+      // Extract the response content (assuming result.data is a string or an object with a "result" key)
+      let content: string;
+      if (typeof result.data === "string") {
+        content = result.data;
+      } else if (typeof result.data === "object" && result.data !== null && "result" in result.data) {
+        content = (result.data as { result: string }).result;
+      } else {
+        content = "No valid response received";
       }
       
-      const data = await response.json();
-      // Log the parsed API response data
-      
-      const aiMsg: Message = { role: "assistant", content: data.content };
+      const aiMsg: Message = { role: "assistant", content };
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {
       console.error("Error sending message:", err);
