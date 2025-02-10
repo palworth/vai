@@ -1,4 +1,5 @@
 // functions/src/genkit-rag-chat-flow.ts
+
 import { genkit } from "genkit";
 import * as admin from "firebase-admin";
 import dotenv from "dotenv";
@@ -23,6 +24,26 @@ const ai = genkit({
 // Define a helper for rendering objects as formatted JSON.
 ai.defineHelper("json", (obj: unknown) => JSON.stringify(obj, null, 2));
 
+// *** NEW CODE ADDED ***
+// Preload the prompt action during module initialization so that it is defined only once.
+// This prevents the "Cannot define new actions at runtime" error.
+const dogVetPrompt = ai.prompt("dog-vet-prompt");
+
+// Warm-up call: force the prompt (and any dependent model actions) to be defined at initialization.
+// Provide dummy input that roughly matches the expected structure.
+// (Adjust the dummy values as needed for your prompt.)
+dogVetPrompt({
+  simplifiedDogData: {},
+  dietEvents: [],
+  behaviorEvents: [],
+  exerciseEvents: [],
+  healthEvents: [],
+  wellnessEvents: [],
+  testQuestion: "warmup"
+}).catch((err) => {
+  console.warn("Warmup call for dog-vet-prompt failed (this may be expected if dummy input is invalid):", err.message);
+});
+
 /**
  * Generates a response using our dog-vet prompt.
  * @param params Object containing the dogId and testQuestion.
@@ -32,9 +53,15 @@ export async function generateDogResponse({ dogId, testQuestion }: { dogId: stri
   try {
     // Create a DocumentReference for the dog.
     const dogRef = db.doc(`/dogs/${dogId}`);
+    console.log("path to doggy", dogRef)
 
     // Fetch dog's data from Firestore.
     const dogDoc = await dogRef.get();
+    if (!dogDoc.exists) {
+      console.error("No document found for dogId:", dogId);
+    } else {
+      console.log("Dog document data:", dogDoc.data());
+    }
     const dogData = dogDoc.data();
 
     // Simplify the dog's data.
@@ -104,8 +131,8 @@ export async function generateDogResponse({ dogId, testQuestion }: { dogId: stri
       testQuestion, // Now we include testQuestion from the parameters.
     };
 
-    // Call the prompt by its registered name ("dog-vet-prompt").
-    const promptOutput = await ai.prompt("dog-vet-prompt")(promptInput);
+    // Use the preloaded prompt action (dogVetPrompt) to generate the output.
+    const promptOutput = await dogVetPrompt(promptInput);
 
     console.log("LLM Response:", promptOutput.text);
     return promptOutput.text;

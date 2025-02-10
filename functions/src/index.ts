@@ -1,6 +1,7 @@
 // functions/src/index.ts
 
-import { onCallGenkit, hasClaim } from 'firebase-functions/https';
+import { onCallGenkit } from 'firebase-functions/https';
+// import { hasClaim } from 'firebase-functions/https';
 import { genkit, z } from 'genkit';
 import { generateDogResponse } from './genkit-rag-chat-flow';
 import { vertexAI } from '@genkit-ai/vertexai';
@@ -58,8 +59,9 @@ const dogResponseAction = {
 // Here we add an auth policy (users must have a verified email) and enforce App Check.
 export const generateDogResponseFunction = onCallGenkit(
   {
-    authPolicy: hasClaim("email_verified"),
-    enforceAppCheck: true,
+    // authPolicy: hasClaim("email_verified"),
+    // enforceAppCheck: true,
+    cors: "http://localhost:3000",
   },
   dogResponseAction
 );

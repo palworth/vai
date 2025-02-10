@@ -15,43 +15,41 @@ export default function RagChatPage() {
   const [isGeneralChat, setIsGeneralChat] = useState(false)
   const { user } = useAuth()
 
-  
   // Fetch user's dogs for the dropdown.
   const fetchUserDogs = useCallback(async () => {
-    if (!user) return
+    if (!user) return;
     const dogsQuery = query(
       collection(db, "dogs"),
       where("users", "array-contains", doc(db, "users", user.uid))
-    )
-    const querySnapshot = await getDocs(dogsQuery)
+    );
+    const querySnapshot = await getDocs(dogsQuery);
     const dogsData = querySnapshot.docs.map((docSnap) => {
-      // Spread the document data and remove any "id" property from the data.
-      const data = { ...docSnap.data() } as Record<string, any>
-      delete data.id
-      return { id: docSnap.id, ...data } as Dog
-    })
-    setDogs(dogsData)
+      const data = { ...docSnap.data() } as Record<string, any>;
+      delete data.id;
+      return { id: docSnap.id, ...data } as Dog;
+    });
+    setDogs(dogsData);
     if (dogsData.length > 0 && !isGeneralChat) {
-      setSelectedDogId(dogsData[0].id)
+      setSelectedDogId(dogsData[0].id);
     }
-  }, [user, isGeneralChat])
+  }, [user, isGeneralChat]);
 
   useEffect(() => {
     if (user) {
-      fetchUserDogs()
+      fetchUserDogs();
     }
-  }, [user, fetchUserDogs])
+  }, [user, fetchUserDogs]);
 
   // Send message handler.
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (input.trim() === "" || (!selectedDogId && !isGeneralChat)) return
+    e.preventDefault();
+    if (input.trim() === "" || (!selectedDogId && !isGeneralChat)) return;
 
-    const userMsg: Message = { role: "user", content: input }
-    setMessages((prev) => [...prev, userMsg])
-    const currentInput = input
-    setInput("")
-    setIsLoading(true)
+    const userMsg: Message = { role: "user", content: input };
+    setMessages((prev) => [...prev, userMsg]);
+    const currentInput = input;
+    setInput("");
+    setIsLoading(true);
 
     try {
       const response = await fetch("/api/rag-chat", {
@@ -63,45 +61,49 @@ export default function RagChatPage() {
           userId: user?.uid,
           isGeneralChat,
         }),
-      })
+      });
+      
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to get response from API")
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to get response from API");
       }
-      const data = await response.json()
-      const aiMsg: Message = { role: "assistant", content: data.content }
-      setMessages((prev) => [...prev, aiMsg])
+      
+      const data = await response.json();
+      // Log the parsed API response data
+      
+      const aiMsg: Message = { role: "assistant", content: data.content };
+      setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {
-      console.error("Error sending message:", err)
+      console.error("Error sending message:", err);
       const errorMsg: Message = {
         role: "assistant",
         content: `Error: ${err instanceof Error ? err.message : "An unknown error occurred"}`,
-      }
-      setMessages((prev) => [...prev, errorMsg])
+      };
+      setMessages((prev) => [...prev, errorMsg]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const onInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value)
-  }
+    setInput(e.target.value);
+  };
 
   const onSelectDog = (dogId: string) => {
-    setSelectedDogId(dogId)
-  }
+    setSelectedDogId(dogId);
+  };
 
   const toggleGeneralChat = () => {
     setIsGeneralChat((prev) => {
-      const newVal = !prev
+      const newVal = !prev;
       if (newVal) {
-        setSelectedDogId(null)
+        setSelectedDogId(null);
       } else if (dogs.length > 0) {
-        setSelectedDogId(dogs[0].id)
+        setSelectedDogId(dogs[0].id);
       }
-      return newVal
-    })
-  }
+      return newVal;
+    });
+  };
 
   return (
     <div className="container mx-auto py-8">
@@ -119,5 +121,5 @@ export default function RagChatPage() {
         toggleGeneralChat={toggleGeneralChat}
       />
     </div>
-  )
+  );
 }
