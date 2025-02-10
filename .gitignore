@@ -48,3 +48,7 @@ app/scripts/outputs/
 
 #App hosting firebase
 apphosting.yaml
+
+
+#logs 
+firestore-debug.log
