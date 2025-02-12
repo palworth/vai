@@ -8,7 +8,6 @@ import "react-datepicker/dist/react-datepicker.css";
 import { type DataItem, formatDate } from "../utils/types";
 import { EVENT_COLORS } from "../constants/colors";
 
-// Dropdown options for behavior events
 const behaviorTypes = [
   "Barking",
   "Chewing",
@@ -19,7 +18,6 @@ const behaviorTypes = [
   "Fear",
 ];
 
-// Dropdown options for exercise events
 const exerciseActivities = [
   "Walking",
   "Running/Jogging",
@@ -38,7 +36,6 @@ const exerciseSources = [
   "Apple Health",
 ];
 
-// Dropdown options for wellness events
 const mentalStates = [
   "depressed",
   "anxious",
@@ -88,7 +85,7 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
     } else if (data.type === "diet-schedule") {
       return {
         scheduleName: data.scheduleName,
-        feedingTimes: data.feedingTimes, // Array of "morning", "evening", or "allDay"
+        feedingTimes: data.feedingTimes, // e.g., ["morning", "evening"]
         foodType: data.foodType,
         brandName: data.brandName,
         quantity: data.quantity,
@@ -108,6 +105,16 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
 
   const eventColor = getEventColor(data.type);
 
+  // Build the correct API endpoint depending on the event type.
+  const getApiEndpoint = (): string => {
+    if (data.type === "diet-schedule") {
+      // For diet schedule events, use singular "diet-schedule-event"
+      return `/api/diet-schedule-event/${data.id}`;
+    }
+    // For other event types, use plural (e.g., behavior-events, exercise-events, etc.)
+    return `/api/${data.type}-events/${data.id}`;
+  };
+
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsEditing(true);
@@ -116,7 +123,7 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
   const handleDeleteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const endpoint = `/api/${data.type}-events/${data.id}`;
+      const endpoint = getApiEndpoint();
       const res = await fetch(endpoint, { method: "DELETE" });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       router.push(`/${data.type}`);
@@ -174,7 +181,7 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
       };
     }
     try {
-      const endpoint = `/api/${data.type}-events/${data.id}`;
+      const endpoint = getApiEndpoint();
       const res = await fetch(endpoint, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
