@@ -4,6 +4,7 @@ export const EVENT_COLORS = {
     behavior: "#C1693C",
     exercise: "#3B2B75",
     diet: "#D65B9D",
+    "diet-schedule": "#2e8b57",
     wellness: "#2B7CD5",
     health: "#4CAF50",
     default: "#000000",
