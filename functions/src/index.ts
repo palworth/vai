@@ -1,11 +1,19 @@
 // functions/src/index.ts
 
-import { onCallGenkit,isSignedIn } from 'firebase-functions/https';
+import { onCallGenkit, isSignedIn } from 'firebase-functions/https';
 // import { hasClaim } from 'firebase-functions/https';
 import { genkit, z } from 'genkit';
 import { generateDogResponse } from './genkit-rag-chat-flow';
 import { vertexAI } from '@genkit-ai/vertexai';
+import { defineSecret } from 'firebase-functions/params';
 
+
+const apiKey = defineSecret("GOOGLE_GENAI_API_KEY");
+
+// if (process.env.NODE_ENV !== "production") {
+//     require("dotenv").config({ path: ".env.flocal" });
+//   }
+  
 // Create a Genkit instance with the prompt directory and plugin configuration.
 const ai = genkit({
   promptDir: "./prompts",
@@ -61,8 +69,9 @@ export const generateDogResponseFunction = onCallGenkit(
   {
     // authPolicy: hasClaim("email_verified"),
     // enforceAppCheck: true,
+    secrets: [apiKey],
     authPolicy: isSignedIn(),
-    cors: "http://localhost:3000",
+    cors: true,
   },
   dogResponseAction
 );
