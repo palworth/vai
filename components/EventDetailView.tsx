@@ -85,6 +85,14 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
         severity: data.severity,
         notes: data.notes,
       };
+    } else if (data.type === "diet-schedule") {
+      return {
+        scheduleName: data.scheduleName,
+        feedingTimes: data.feedingTimes, // Array of "morning", "evening", or "allDay"
+        foodType: data.foodType,
+        brandName: data.brandName,
+        quantity: data.quantity,
+      };
     }
     return {};
   });
@@ -153,6 +161,15 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
         eventType: editData.eventType,
         severity: editData.severity,
         notes: editData.notes,
+        eventDate: editDate.toISOString(),
+      };
+    } else if (data.type === "diet-schedule") {
+      payload = {
+        scheduleName: editData.scheduleName,
+        feedingTimes: editData.feedingTimes,
+        foodType: editData.foodType,
+        brandName: editData.brandName,
+        quantity: editData.quantity,
         eventDate: editDate.toISOString(),
       };
     }
@@ -579,6 +596,108 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
               {healthData.notes && (
                 <p className="mt-4">Notes: {healthData.notes}</p>
               )}
+            </>
+          );
+        }
+      }
+      case "diet-schedule": {
+        const scheduleData = data as Extract<DataItem, { type: "diet-schedule" }>;
+        if (isEditing) {
+          return (
+            <>
+              <div className="space-y-4">
+                <label className="block font-semibold">Schedule Name:</label>
+                <input
+                  type="text"
+                  value={editData.scheduleName}
+                  onChange={(e) =>
+                    setEditData({ ...editData, scheduleName: e.target.value })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">
+                  Feeding Times (comma separated):
+                </label>
+                <input
+                  type="text"
+                  value={editData.feedingTimes.join(", ")}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      feedingTimes: e.target.value.split(",").map((s) => s.trim()),
+                    })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Food Type:</label>
+                <input
+                  type="text"
+                  value={editData.foodType}
+                  onChange={(e) =>
+                    setEditData({ ...editData, foodType: e.target.value })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Brand Name:</label>
+                <input
+                  type="text"
+                  value={editData.brandName}
+                  onChange={(e) =>
+                    setEditData({ ...editData, brandName: e.target.value })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Quantity:</label>
+                <input
+                  type="number"
+                  value={editData.quantity}
+                  onChange={(e) =>
+                    setEditData({ ...editData, quantity: Number(e.target.value) })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Event Date:</label>
+                <DatePicker
+                  selected={editDate}
+                  onChange={(date: Date | null) => setEditDate(date as Date)}
+                  dateFormat="MMMM d, yyyy, h:mm aa"
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="mt-4 flex space-x-4">
+                <button
+                  onClick={handleSaveClick}
+                  className="px-4 py-2 bg-green-500 text-white rounded"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 bg-gray-500 text-white rounded"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          );
+        } else {
+          return (
+            <>
+              <p className="text-xl font-semibold">{scheduleData.scheduleName}</p>
+              <p>Feeding Times: {scheduleData.feedingTimes.join(", ")}</p>
+              <p>Food Type: {scheduleData.foodType}</p>
+              <p>Brand: {scheduleData.brandName}</p>
+              <p>Quantity: {scheduleData.quantity}</p>
             </>
           );
         }
