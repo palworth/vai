@@ -45,3 +45,11 @@ app/utils/firebaseRulesTest.ts
 app/utils/firebaseRulesTest.js
 config/vai2-80fb0-4b4946372e42.json
 app/scripts/outputs/
+
+#App hosting firebase
+apphosting.yaml
+
+
+#logs 
+firestore-debug.log
+firebase-debug.log

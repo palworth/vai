@@ -1,7 +1,8 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // distDir: 'out',   // <-- Add this line to override the default .next folder
   webpack: (config, { isServer }) => {
     // Exclude firebaseRulesTest files from the build
     config.module.rules.push({
@@ -14,4 +15,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-

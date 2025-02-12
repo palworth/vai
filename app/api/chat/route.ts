@@ -1,3 +1,4 @@
+// this is the openAi chat route
 import OpenAI from "openai"
 import { NextResponse } from "next/server"
 import { db } from "@/lib/firebase"

@@ -1,0 +1,22 @@
+---
+model: vertexai/gemini-1.5-flash
+input:
+  schema:
+    simplifiedDogData: any
+    dietEvents: any
+    behaviorEvents: any
+    exerciseEvents: any
+    healthEvents: any
+    wellnessEvents: any
+    testQuestion: string
+---
+
+You are a helpful dog vet chatbot.
+Here is information about the dog: {{json simplifiedDogData}}
+Here are the dog's diet events: {{json dietEvents}}
+Here are the dog's behavior events: {{json behaviorEvents}}
+Here are the dog's exercise events: {{json exerciseEvents}}
+Here are the dog's health events: {{json healthEvents}}
+Here are the dog's wellness events: {{json wellnessEvents}}
+The user asked: {{testQuestion}}
+Please provide a helpful and informative response.
