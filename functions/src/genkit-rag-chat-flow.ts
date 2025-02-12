@@ -2,12 +2,12 @@
 
 import { genkit } from "genkit";
 import * as admin from "firebase-admin";
-import dotenv from "dotenv";
+// import dotenv from "dotenv";
 import { vertexAI } from "@genkit-ai/vertexai";
 
 // Load environment variables if needed
-dotenv.config({ path: "./.env.local" });
-console.log("Initializing Firebase Admin for Firestore (RAG Chat Flow)");
+// dotenv.config({ path: ".env.flocal" });
+// console.log("Initializing Firebase Admin for Firestore (RAG Chat Flow)");
 
 // Initialize firebase-admin if not already initialized
 if (!admin.apps.length) {
@@ -24,7 +24,6 @@ const ai = genkit({
 // Define a helper for rendering objects as formatted JSON.
 ai.defineHelper("json", (obj: unknown) => JSON.stringify(obj, null, 2));
 
-// *** NEW CODE ADDED ***
 // Preload the prompt action during module initialization so that it is defined only once.
 // This prevents the "Cannot define new actions at runtime" error.
 const dogVetPrompt = ai.prompt("dog-vet-prompt");
@@ -114,11 +113,6 @@ export async function generateDogResponse({ dogId, testQuestion }: { dogId: stri
       eventDate: e.eventDate
     }));
 
-    console.log("Cleaned Diet Events:", dietEvents);
-    console.log("Cleaned Behavior Events:", behaviorEvents);
-    console.log("Cleaned Exercise Events:", exerciseEvents);
-    console.log("Cleaned Health Events:", healthEvents);
-    console.log("Cleaned Wellness Events:", wellnessEvents);
 
     // Build the input for the prompt.
     const promptInput = {
