@@ -3,15 +3,14 @@
 import { useState, useEffect, useCallback, FormEvent } from "react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { collection, query, where, getDocs, doc } from "firebase/firestore";
-import { db, functions } from "@/lib/firebase"; // Ensure your lib/firebase exports your functions instance
+import { db, functions } from "@/lib/firebase";
 import { ChatInterface, Message, Dog } from "@/components/ChatInterface";
-import { getFunctions, httpsCallable, connectFunctionsEmulator } from "firebase/functions";
+import { httpsCallable, connectFunctionsEmulator } from "firebase/functions";
 
 // If in development, connect to the Functions emulator:
-if (process.env.NODE_ENV === "development") {
-  // This will ensure that the functions instance points to your local emulator
-  connectFunctionsEmulator(functions, "localhost", 5001);
-}
+// if (process.env.NODE_ENV === "development") {
+//   connectFunctionsEmulator(functions, "localhost", 5001);
+// }
 
 export default function RagChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -21,6 +20,7 @@ export default function RagChatPage() {
   const [selectedDogId, setSelectedDogId] = useState<string | null>(null);
   const [isGeneralChat, setIsGeneralChat] = useState(false);
   const { user } = useAuth();
+
 
   // Fetch user's dogs for the dropdown.
   const fetchUserDogs = useCallback(async () => {
@@ -47,11 +47,10 @@ export default function RagChatPage() {
     }
   }, [user, fetchUserDogs]);
 
-  // Updated onSubmit handler that calls the Cloud Function directly
+  // Updated onSubmit handler that calls the Cloud Function directly.
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (input.trim() === "" || (!selectedDogId && !isGeneralChat)) return;
-
     const userMsg: Message = { role: "user", content: input };
     setMessages((prev) => [...prev, userMsg]);
     const currentInput = input;
@@ -59,14 +58,17 @@ export default function RagChatPage() {
     setIsLoading(true);
 
     try {
-      // Create a callable reference to the Cloud Function directly
+      // Create a callable reference to the Cloud Function directly.
       const generateDogResponseCallable = httpsCallable(functions, "generateDogResponseFunction");
-      const result = await generateDogResponseCallable({ dogId: isGeneralChat ? null : selectedDogId, testQuestion: currentInput });
+
+      const result = await generateDogResponseCallable({
+        dogId: isGeneralChat ? null : selectedDogId,
+        testQuestion: currentInput,
+      });
       
-      // Log the response for debugging
+      // Log the response for debugging.
       console.log("Result from Cloud Function:", result.data);
       
-      // Extract the response content (assuming result.data is a string or an object with a "result" key)
       let content: string;
       if (typeof result.data === "string") {
         content = result.data;
