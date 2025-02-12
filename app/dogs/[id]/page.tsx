@@ -22,6 +22,7 @@ export default function DogDetailPage() {
         const endpoints = [
           { url: `/api/behavior-events/data/by_dog?dogId=${dogId}`, type: "behavior" },
           { url: `/api/diet-events/data/by_dog?dogId=${dogId}`, type: "diet" },
+          { url: `/api/diet-schedule-event/data/by_dog?dogId=${dogId}`, type: "diet-schedule" },
           { url: `/api/exercise-events/data/by_dog?dogId=${dogId}`, type: "exercise" },
           { url: `/api/health-events/data/by_dog?dogId=${dogId}`, type: "health" },
           { url: `/api/wellness-events/data/by_dog?dogId=${dogId}`, type: "wellness" },
@@ -41,8 +42,9 @@ export default function DogDetailPage() {
         // Combine the results from all endpoints.
         let combined: DataItem[] = [];
         endpoints.forEach((endpoint, i) => {
-          // The API returns an object with key "<type>Events" e.g. "behaviorEvents"
-          const key = endpoint.type + "Events";
+          // Determine the response key.
+          // For diet-schedule events, our API returns the key as "dietScheduleEvents"
+          const key = endpoint.type === "diet-schedule" ? "dietScheduleEvents" : endpoint.type + "Events";
           if (responses[i] && responses[i][key]) {
             const events: DataItem[] = responses[i][key].map((event: any) => ({
               ...event,
