@@ -1,74 +1,91 @@
-import { Card } from "@/components/ui/card";
+
+"use client";
 import { InstructorInfo } from "@/components/InstructorInfo";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Clock, Utensils, ShoppingBag, Weight } from "lucide-react";
 import type { DataItem } from "../utils/types";
 
 interface DietScheduleCardProps {
   data: DataItem & {
     type: "diet-schedule";
     scheduleName: string;
-    feedingTimes: string[];
+    feedingTimes: ("morning" | "evening" | "all day")[];
     foodType: string;
     brandName: string;
     quantity: number;
     dogName?: string;
+    dogImageUrl?: string;
+    breed: string;
   };
+}
+
+function formatFeedingTimes(times: ("morning" | "evening" | "all day")[]) {
+  if (times.includes("all day")) {
+    return "All Day";
+  }
+  return times.map((t) => t.charAt(0).toUpperCase() + t.slice(1)).join(" and ");
 }
 
 export function GuidedProgramCard({ data }: DietScheduleCardProps) {
   return (
-    <Card className="bg-gray-50 mb-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-        <div className="space-y-2 mb-4 sm:mb-0">
-          {/* Tag */}
-          <span className="inline-block px-3 py-1 bg-white rounded-full text-sm text-gray-600">
-            Diet Schedule
-          </span>
-          {/* Schedule Name */}
-          <h2 className="text-2xl font-bold">{data.scheduleName}</h2>
-          {/* Details */}
-          <div className="space-y-1 text-gray-600">
-            <div className="flex items-center gap-2">
-              {/* Feeding Times Icon */}
-              <svg viewBox="0 0 24 24" className="w-5 h-5">
-                <path
-                  fill="currentColor"
-                  d="M12 7a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6z"
-                />
-              </svg>
-              <span>Feeding Times: {data.feedingTimes.join(", ")}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Food Type Icon */}
-              <svg viewBox="0 0 24 24" className="w-5 h-5">
-                <path
-                  fill="currentColor"
-                  d="M4 4h16v2H4zm0 4h16v2H4zm0 4h16v2H4zm0 4h16v2H4z"
-                />
-              </svg>
-              <span>Food: {data.foodType}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Brand Icon */}
-              <svg viewBox="0 0 24 24" className="w-5 h-5">
-                <path
-                  fill="currentColor"
-                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zM7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 2.41-2 5.67-5 9.88C9 14.67 7 11.41 7 9z"
-                />
-              </svg>
-              <span>Brand: {data.brandName}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Quantity Icon */}
-              <svg viewBox="0 0 24 24" className="w-5 h-5">
-                <path fill="currentColor" d="M3 3h18v2H3z" />
-              </svg>
-              <span>Quantity: {data.quantity} g</span>
+    <Card className="mb-8">
+      <CardHeader>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <Badge variant="secondary" className="mb-2">
+              Diet Schedule
+            </Badge>
+            <CardTitle>{data.scheduleName}</CardTitle>
+          </div>
+          <InstructorInfo
+            name={data.dogName || "Unknown Dog"}
+            imageUrl={data.dogImageUrl}
+            breed={data.breed}
+          />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <dl className="grid sm:grid-cols-2 gap-4">
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <dt className="sr-only">Feeding Times</dt>
+              <dd>
+                <span className="font-medium">Feeding Times:</span>{" "}
+                {formatFeedingTimes(data.feedingTimes)}
+              </dd>
             </div>
           </div>
-        </div>
-        {/* Use InstructorInfo to display the dog's name */}
-        <InstructorInfo name={data.dogName || "Unknown Dog"} />
-      </div>
+          <div className="flex items-center gap-2">
+            <Utensils className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <dt className="sr-only">Food Type</dt>
+              <dd>
+                <span className="font-medium">Food:</span> {data.foodType}
+              </dd>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <dt className="sr-only">Brand</dt>
+              <dd>
+                <span className="font-medium">Brand:</span> {data.brandName}
+              </dd>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Weight className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <dt className="sr-only">Quantity</dt>
+              <dd>
+                <span className="font-medium">Quantity:</span> {data.quantity} g
+              </dd>
+            </div>
+          </div>
+        </dl>
+      </CardContent>
     </Card>
   );
 }
