@@ -1,6 +1,7 @@
 // utils/types.ts
 
-export type FeedingTimeOption = "morning" | "evening" | "allDay";
+export type FeedingTimeOption = "morning" | "evening" | "all day";
+
 
 export type DataItem = {
   id: string;
