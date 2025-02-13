@@ -1,9 +1,10 @@
-
 "use client";
+import { useRouter } from "next/navigation";
 import { InstructorInfo } from "@/components/InstructorInfo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Utensils, ShoppingBag, Weight } from "lucide-react";
+import { EVENT_COLORS } from "@/constants/colors";  // now includes diet-schedule-bg
 import type { DataItem } from "../utils/types";
 
 interface DietScheduleCardProps {
@@ -28,8 +29,17 @@ function formatFeedingTimes(times: ("morning" | "evening" | "all day")[]) {
 }
 
 export function GuidedProgramCard({ data }: DietScheduleCardProps) {
+  const router = useRouter();
+
+  const handleClick = () => {
+    router.push(`/diet-schedule/${data.id}`);
+  };
+
   return (
-    <Card className="mb-8">
+    <Card
+      className={`${EVENT_COLORS["diet-schedule-bg"]} mb-8 cursor-pointer`}
+      onClick={handleClick}
+    >
       <CardHeader>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
