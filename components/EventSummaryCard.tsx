@@ -5,12 +5,15 @@ import { events as eventConfigs } from "../constants/navigation";
 import { useRouter } from "next/navigation";
 
 // Use the events array from your constants file to determine the background color.
+const normalize = (str: string) => str.replace(/[-\s]/g, "").toLowerCase();
+
 const getCardColor = (type: DataItem["type"]): string => {
   const eventObj = eventConfigs.find(
-    (ev) => ev.title.toLowerCase() === type.toLowerCase()
+    (ev) => normalize(ev.title) === normalize(type)
   );
-  return eventObj ? eventObj.backgroundColor : "#FFFFFF";
+  return eventObj ? eventObj.backgroundColor : "#000000";
 };
+
 
 // Helper to render notes if they exist.
 const renderNotes = (notes: string) =>
@@ -54,6 +57,18 @@ const EventSummaryCard: React.FC<{ data: DataItem }> = ({ data }) => {
             <p className="text-lg font-semibold">{data.foodType}</p>
             <p>Brand: {data.brandName}</p>
             <p>Quantity: {data.quantity} g</p>
+          </>
+        );
+      case "diet-schedule":
+        return (
+          <>
+            <p className="text-lg font-semibold">{data.scheduleName}</p>
+            <p>
+              Feeding Times: {Array.isArray(data.feedingTimes) ? data.feedingTimes.join(", ") : data.feedingTimes}
+            </p>
+            <p>Brand: {data.brandName}</p>
+            <p>Food Type: {data.foodType}</p>
+            <p>Quantity: {data.quantity}</p>
           </>
         );
       case "wellness":

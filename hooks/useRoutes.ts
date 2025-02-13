@@ -1,10 +1,10 @@
-import { useCallback } from "react"
+import { useCallback } from "react";
 
 export function useRoutes() {
-  const getRoute = (route: string): string => {
+  const getRoute = useCallback((route: string): string => {
     switch (route) {
       // Nav bar routes
-        case "dogs":
+      case "dogs":
         return "/dogs";
       case "settings":
         return "/settings";
@@ -23,14 +23,13 @@ export function useRoutes() {
         return "/health";
       case "diet":
         return "/diet";
-      
+      case "diet-schedule":
+        return "/diet-schedule";
       // default route
-        default:
+      default:
         return "/";
-    // ... other routes
     }
-  };
+  }, []);
 
   return { getRoute };
 }
-

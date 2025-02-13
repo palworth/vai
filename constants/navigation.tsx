@@ -45,6 +45,11 @@ export const events: EventCard[] = [
     href: "diet",
   },
   {
+    title: "Diet Schedule",
+    backgroundColor: EVENT_COLORS["diet-schedule"],
+    href: "diet-schedule",
+  },
+  {
     title: "Wellness",
     backgroundColor: EVENT_COLORS.wellness,
     href: "wellness",

@@ -24,6 +24,7 @@ const eventColors = {
   Behavior: "#C1693C",
   Exercise: "#3B2B75",
   Diet: "#D65B9D",
+  "Diet Schedule": "#2e8b57",
   Wellness: "#2B7CD5",
   Health: "#4CAF50",
 };
@@ -43,10 +44,14 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
   const [behaviorType, setBehaviorType] = useState("");
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
 
-  // Diet-specific state
+  // Diet-specific state (for Diet events)
   const [foodType, setFoodType] = useState("");
   const [brandName, setBrandName] = useState("");
   const [quantity, setQuantity] = useState(0);
+
+  // Additional state for Diet Schedule events
+  const [scheduleName, setScheduleName] = useState("");
+  const [feedingTimes, setFeedingTimes] = useState<string[]>([]); // allowed values: "morning", "evening", "allDay"
 
   // Wellness-specific state
   const [mentalState, setMentalState] = useState("");
@@ -94,6 +99,26 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
 
   const currentColor = eventColors[eventType as keyof typeof eventColors];
 
+  // Handler for feeding times checkboxes for Diet Schedule.
+  const handleFeedingTimeChange = (time: string, checked: boolean) => {
+    if (time === "allDay") {
+      if (checked) {
+        // If "allDay" is checked, set feedingTimes to only "allDay"
+        setFeedingTimes(["allDay"]);
+      } else {
+        setFeedingTimes([]);
+      }
+    } else {
+      // If "allDay" is already selected, ignore changes to other options.
+      if (feedingTimes.includes("allDay")) return;
+      if (checked) {
+        setFeedingTimes([...feedingTimes, time]);
+      } else {
+        setFeedingTimes(feedingTimes.filter((t) => t !== time));
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
@@ -118,6 +143,12 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
       payload.foodType = foodType;
       payload.brandName = brandName;
       payload.quantity = quantity;
+    } else if (eventType === "Diet Schedule") {
+      payload.scheduleName = scheduleName;
+      payload.feedingTimes = feedingTimes;
+      payload.foodType = foodType;
+      payload.brandName = brandName;
+      payload.quantity = quantity;
     } else if (eventType === "Wellness") {
       payload.mentalState = mentalState;
       payload.severity = wellnessSeverity;
@@ -133,15 +164,19 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
       payload.notes = healthNotes;
     }
 
-    // Determine API endpoint based on eventType
-    const endpoint = `/api/${eventType.toLowerCase()}-events`;
+    // Determine API endpoint based on eventType.
+    // For Diet Schedule, we use the dedicated API route.
+    let endpoint = "";
+    if (eventType === "Diet Schedule") {
+      endpoint = "/api/diet-schedule-event";
+    } else {
+      endpoint = `/api/${eventType.toLowerCase()}-events`;
+    }
 
     try {
       const res = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
@@ -149,12 +184,10 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
       }
       const responseData = await res.json();
       console.log("Event created successfully:", responseData);
-      // On success, call the onSuccess callback to close the modal (and drop down the menu)
       onSuccess();
-      // Optionally, reset form fields here
+      // Optionally, reset form fields here.
     } catch (error: any) {
       console.error("Error creating event:", error);
-      // Optionally, display an error toast
     }
   };
 
@@ -270,6 +303,96 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
 
       {eventType === "Diet" && (
         <>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">FOOD TYPE</h3>
+            <div className="bg-white rounded-2xl">
+              <select
+                value={foodType}
+                onChange={(e) => setFoodType(e.target.value)}
+                className="w-full p-4 text-gray-900 bg-transparent"
+              >
+                <option value="">Select food type</option>
+                {foodTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">BRAND NAME</h3>
+            <div className="bg-white rounded-2xl">
+              <input
+                type="text"
+                value={brandName}
+                onChange={(e) => setBrandName(e.target.value)}
+                placeholder="Enter brand name"
+                className="w-full p-4 text-gray-900 bg-transparent placeholder-gray-400"
+              />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">QUANTITY (GRAMS)</h3>
+            <div className="bg-white rounded-2xl">
+              <input
+                type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                placeholder="Enter quantity in grams"
+                className="w-full p-4 text-gray-900 bg-transparent placeholder-gray-400"
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {eventType === "Diet Schedule" && (
+        <>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">SCHEDULE NAME</h3>
+            <div className="bg-white rounded-2xl">
+              <input
+                type="text"
+                value={scheduleName}
+                onChange={(e) => setScheduleName(e.target.value)}
+                placeholder="Enter schedule name"
+                className="w-full p-4 text-gray-900 bg-transparent placeholder-gray-400"
+              />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">FEEDING TIMES</h3>
+            <div className="bg-white rounded-2xl p-4">
+              <label className="mr-4">
+                <input
+                  type="checkbox"
+                  value="morning"
+                  checked={feedingTimes.includes("morning")}
+                  onChange={(e) => handleFeedingTimeChange("morning", e.target.checked)}
+                />{" "}
+                Morning
+              </label>
+              <label className="mr-4">
+                <input
+                  type="checkbox"
+                  value="evening"
+                  checked={feedingTimes.includes("evening")}
+                  onChange={(e) => handleFeedingTimeChange("evening", e.target.checked)}
+                />{" "}
+                Evening
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  value="allDay"
+                  checked={feedingTimes.includes("allDay")}
+                  onChange={(e) => handleFeedingTimeChange("allDay", e.target.checked)}
+                />{" "}
+                All Day
+              </label>
+            </div>
+          </div>
           <div className="space-y-4">
             <h3 className="text-gray-400 text-sm font-medium tracking-wider">FOOD TYPE</h3>
             <div className="bg-white rounded-2xl">

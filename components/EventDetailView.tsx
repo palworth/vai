@@ -8,7 +8,6 @@ import "react-datepicker/dist/react-datepicker.css";
 import { type DataItem, formatDate } from "../utils/types";
 import { EVENT_COLORS } from "../constants/colors";
 
-// Dropdown options for behavior events
 const behaviorTypes = [
   "Barking",
   "Chewing",
@@ -19,7 +18,6 @@ const behaviorTypes = [
   "Fear",
 ];
 
-// Dropdown options for exercise events
 const exerciseActivities = [
   "Walking",
   "Running/Jogging",
@@ -38,7 +36,6 @@ const exerciseSources = [
   "Apple Health",
 ];
 
-// Dropdown options for wellness events
 const mentalStates = [
   "depressed",
   "anxious",
@@ -85,6 +82,14 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
         severity: data.severity,
         notes: data.notes,
       };
+    } else if (data.type === "diet-schedule") {
+      return {
+        scheduleName: data.scheduleName,
+        feedingTimes: data.feedingTimes, // e.g., ["morning", "evening"]
+        foodType: data.foodType,
+        brandName: data.brandName,
+        quantity: data.quantity,
+      };
     }
     return {};
   });
@@ -100,6 +105,16 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
 
   const eventColor = getEventColor(data.type);
 
+  // Build the correct API endpoint depending on the event type.
+  const getApiEndpoint = (): string => {
+    if (data.type === "diet-schedule") {
+      // For diet schedule events, use singular "diet-schedule-event"
+      return `/api/diet-schedule-event/${data.id}`;
+    }
+    // For other event types, use plural (e.g., behavior-events, exercise-events, etc.)
+    return `/api/${data.type}-events/${data.id}`;
+  };
+
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsEditing(true);
@@ -108,7 +123,7 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
   const handleDeleteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const endpoint = `/api/${data.type}-events/${data.id}`;
+      const endpoint = getApiEndpoint();
       const res = await fetch(endpoint, { method: "DELETE" });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       router.push(`/${data.type}`);
@@ -155,9 +170,18 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
         notes: editData.notes,
         eventDate: editDate.toISOString(),
       };
+    } else if (data.type === "diet-schedule") {
+      payload = {
+        scheduleName: editData.scheduleName,
+        feedingTimes: editData.feedingTimes,
+        foodType: editData.foodType,
+        brandName: editData.brandName,
+        quantity: editData.quantity,
+        eventDate: editDate.toISOString(),
+      };
     }
     try {
-      const endpoint = `/api/${data.type}-events/${data.id}`;
+      const endpoint = getApiEndpoint();
       const res = await fetch(endpoint, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -579,6 +603,108 @@ const EventDetailView: React.FC<{ data: DataItem }> = ({ data }) => {
               {healthData.notes && (
                 <p className="mt-4">Notes: {healthData.notes}</p>
               )}
+            </>
+          );
+        }
+      }
+      case "diet-schedule": {
+        const scheduleData = data as Extract<DataItem, { type: "diet-schedule" }>;
+        if (isEditing) {
+          return (
+            <>
+              <div className="space-y-4">
+                <label className="block font-semibold">Schedule Name:</label>
+                <input
+                  type="text"
+                  value={editData.scheduleName}
+                  onChange={(e) =>
+                    setEditData({ ...editData, scheduleName: e.target.value })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">
+                  Feeding Times (comma separated):
+                </label>
+                <input
+                  type="text"
+                  value={editData.feedingTimes.join(", ")}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      feedingTimes: e.target.value.split(",").map((s) => s.trim()),
+                    })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Food Type:</label>
+                <input
+                  type="text"
+                  value={editData.foodType}
+                  onChange={(e) =>
+                    setEditData({ ...editData, foodType: e.target.value })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Brand Name:</label>
+                <input
+                  type="text"
+                  value={editData.brandName}
+                  onChange={(e) =>
+                    setEditData({ ...editData, brandName: e.target.value })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Quantity:</label>
+                <input
+                  type="number"
+                  value={editData.quantity}
+                  onChange={(e) =>
+                    setEditData({ ...editData, quantity: Number(e.target.value) })
+                  }
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="space-y-4">
+                <label className="block font-semibold">Event Date:</label>
+                <DatePicker
+                  selected={editDate}
+                  onChange={(date: Date | null) => setEditDate(date as Date)}
+                  dateFormat="MMMM d, yyyy, h:mm aa"
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div className="mt-4 flex space-x-4">
+                <button
+                  onClick={handleSaveClick}
+                  className="px-4 py-2 bg-green-500 text-white rounded"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 bg-gray-500 text-white rounded"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          );
+        } else {
+          return (
+            <>
+              <p className="text-xl font-semibold">{scheduleData.scheduleName}</p>
+              <p>Feeding Times: {scheduleData.feedingTimes.join(", ")}</p>
+              <p>Food Type: {scheduleData.foodType}</p>
+              <p>Brand: {scheduleData.brandName}</p>
+              <p>Quantity: {scheduleData.quantity}</p>
             </>
           );
         }
