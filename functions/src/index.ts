@@ -7,7 +7,10 @@ import { generateDogResponse } from './genkit-rag-chat-flow';
 import { vertexAI } from '@genkit-ai/vertexai';
 import { defineSecret } from 'firebase-functions/params';
 
+// Import your new API Cloud Functions:
+import { getHealthEventsByDog, createHealthEvent, getHealthEventById, getAllHealthEventsByUser } from './api/health-events/route';
 
+//API key in google secret manager 
 const apiKey = defineSecret("GOOGLE_GENAI_API_KEY");
 
 // if (process.env.NODE_ENV !== "production") {
@@ -75,3 +78,5 @@ export const generateDogResponseFunction = onCallGenkit(
   },
   dogResponseAction
 );
+
+export { getHealthEventsByDog, createHealthEvent, getHealthEventById, getAllHealthEventsByUser };

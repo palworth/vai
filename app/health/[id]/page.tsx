@@ -12,7 +12,10 @@ export default function HealthEventPage() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`/api/health-events/${id}`)
+    console.log("id", id)
+    const lol = fetch(`https://us-central1-vai2-80fb0.cloudfunctions.net/getHealthEventById?id=${id}`)
+    console.log("lol", lol) 
+    fetch(`https://us-central1-vai2-80fb0.cloudfunctions.net/getHealthEventById?id=${id}`) 
       .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);

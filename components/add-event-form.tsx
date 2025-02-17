@@ -167,11 +167,14 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
     // Determine API endpoint based on eventType.
     // For Diet Schedule, we use the dedicated API route.
     let endpoint = "";
-    if (eventType === "Diet Schedule") {
-      endpoint = "/api/diet-schedule-event";
-    } else {
-      endpoint = `/api/${eventType.toLowerCase()}-events`;
-    }
+      if (eventType === "Diet Schedule") {
+        endpoint = "/api/diet-schedule-event";
+      } else if (eventType === "Health") {
+        endpoint = "https://us-central1-vai2-80fb0.cloudfunctions.net/createHealthEvent";
+      } else {
+  endpoint = `/api/${eventType.toLowerCase()}-events`;
+}
+
 
     try {
       const res = await fetch(endpoint, {

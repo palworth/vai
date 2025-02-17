@@ -24,7 +24,7 @@ export default function HealthEventsPage() {
   const fetchAllEvents = useCallback(async () => {
     if (!user) return;
     try {
-      const res = await fetch(`/api/health-events/data/all_per_user?userId=${user.uid}`);
+      const res = await fetch(`https://us-central1-vai2-80fb0.cloudfunctions.net/getAllHealthEventsByUser?userId=${user.uid}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const json = await res.json();
       // Map each event to include type "health"
@@ -39,8 +39,6 @@ export default function HealthEventsPage() {
   }, [user]);
 
   // Fetch all dogs for the user.
-  // Assumes dogs are stored in the "dogs" collection and have a "users" field (an array of DocumentReferences)
-  // containing the current user's reference.
   const fetchDogs = useCallback(async () => {
     if (!user) return;
     try {
@@ -57,13 +55,14 @@ export default function HealthEventsPage() {
     }
   }, [user]);
 
-  // Fetch health events for a selected dog by calling the API route.
+  // Fetch health events for a selected dog by calling the cloud function.
   const fetchEventsByDog = useCallback(async (dogId: string) => {
     try {
-      const res = await fetch(`/api/health-events/data/by_dog?dogId=${dogId}`);
+      const res = await fetch(`https://us-central1-vai2-80fb0.cloudfunctions.net/getHealthEventsByDog?dogId=${dogId}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const json = await res.json();
-      const events: DataItem[] = json.healthEvents.map((event: any) => ({
+      // Since the cloud function returns an array directly, map directly over it.
+      const events: DataItem[] = json.map((event: any) => ({
         ...event,
         type: "health",
       }));
