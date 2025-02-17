@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { SearchBarButton } from "@/components/search-bar";
 import { EventGrid } from "@/components/event-grid";
-import { GuidedProgramCard } from "@/components/guided-program-card";
+import { GuidedProgramCard } from "@/components/diet-schedule-card";
 import { CourseList } from "@/components/course-list";
 import { FloatingActionButton } from "@/components/floating-action-button";
 import { events, courses } from "@/constants/navigation";
