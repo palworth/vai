@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { InstructorInfo } from "@/components/InstructorInfo";
+import { InstructorInfo } from "@/components/DogInfo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Utensils, ShoppingBag, Weight } from "lucide-react";

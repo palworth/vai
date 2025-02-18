@@ -4,17 +4,18 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import EventSummaryCard from "../../../components/EventSummaryCard";
-import { GuidedProgramCard } from "@/components/guided-program-card";
+import { GuidedProgramCard } from "@/components/diet-schedule-card";
+import { InstructorInfo } from "@/components/DogInfo";
 import type { DataItem } from "../../../utils/types";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-// Define types (interfaces) - keep these as they are
 interface DogData {
   name?: string;
   breed?: string;
   imageUrl?: string;
 }
+
 type DietScheduleEvent = {
   id: string;
   eventDate: string;
@@ -28,6 +29,7 @@ type DietScheduleEvent = {
   brandName: string;
   quantity: number;
 };
+
 export default function DogDetailPage() {
   const params = useParams();
   const dogId = params.id as string;
@@ -39,29 +41,29 @@ export default function DogDetailPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<any>(null);
 
- // Fetch the dog's data from Firestore using the dogId from the URL.
- useEffect(() => {
-  async function fetchDogData() {
-    try {
-      const dogRef = doc(db, "dogs", dogId);
-      const dogDoc = await getDoc(dogRef);
-      if (dogDoc.exists()) {
-        const data = dogDoc.data() as DogData;
-        setDogData(data);
-      } else {
-        console.error("No dog document found for dogId:", dogId);
+  // Fetch the dog's data
+  useEffect(() => {
+    async function fetchDogData() {
+      try {
+        const dogRef = doc(db, "dogs", dogId);
+        const dogDoc = await getDoc(dogRef);
+        if (dogDoc.exists()) {
+          const data = dogDoc.data() as DogData;
+          setDogData(data);
+        } else {
+          console.error("No dog document found for dogId:", dogId);
+        }
+      } catch (err) {
+        console.error("Error fetching dog data:", err);
       }
-    } catch (err) {
-      console.error("Error fetching dog data:", err);
     }
-  }
-  if (dogId) {
-    fetchDogData();
-  }
-}, [dogId]);
+    if (dogId) {
+      fetchDogData();
+    }
+  }, [dogId]);
 
-// Fetch events from all categories for this dog.
-useEffect(() => {
+  // Fetch events from all categories
+  useEffect(() => {
     async function fetchAllEventsForDog() {
       try {
         const endpoints = [
@@ -69,59 +71,56 @@ useEffect(() => {
           { url: `/api/diet-events/data/by_dog?dogId=${dogId}`, type: "diet" },
           { url: `/api/diet-schedule-event/data/by_dog?dogId=${dogId}`, type: "diet-schedule" },
           { url: `/api/exercise-events/data/by_dog?dogId=${dogId}`, type: "exercise" },
-          { url: `https://us-central1-vai2-80fb0.cloudfunctions.net/getHealthEventsByDog?dogId=${dogId}`, type: "health" }, // <-- Cloud Function URL
+          { url: `https://us-central1-vai2-80fb0.cloudfunctions.net/getHealthEventsByDog?dogId=${dogId}`, type: "health" },
           { url: `/api/wellness-events/data/by_dog?dogId=${dogId}`, type: "wellness" },
         ];
 
         const responses = await Promise.all(
-          endpoints.map(async (e) => {
-            const res = await fetch(e.url);
+          endpoints.map(async (endpoint) => {
+            const res = await fetch(endpoint.url);
             if (!res.ok) {
-              throw new Error(`HTTP error! status: ${res.status} for URL: ${e.url}`);
+              throw new Error(`HTTP error! status: ${res.status} for URL: ${endpoint.url}`);
             }
-            return { type: e.type, data: await res.json() }; // Return type and data
+            return { type: endpoint.type, data: await res.json() };
           })
         );
 
         let combined: DataItem[] = [];
-        endpoints.forEach((endpoint, i) => {
-          const response = responses[i]; // Get the response object
-          if (response && response.data) { // Check if response and data exist
-            const key =
-              endpoint.type === "diet-schedule"
-                ? "dietScheduleEvents"
-                : endpoint.type + "Events";
+        for (let i = 0; i < endpoints.length; i++) {
+          const { type } = endpoints[i];
+          const { data } = responses[i];
 
-            let eventsArray = response.data; // Data is already parsed JSON
+          // For each endpoint, figure out where the events array lives
+          const key = type === "diet-schedule" ? "dietScheduleEvents" : type + "Events";
 
-            if (endpoint.type === "health" && Array.isArray(response.data)) {
-              // For health events from Cloud Function, data is already an array
-              eventsArray = response.data;
-            } else if (response.data[key] && Array.isArray(response.data[key])) {
-              // For other event types, extract events array from response.data[key]
-              eventsArray = response.data[key];
-            } else {
-              eventsArray = []; // Default to empty array if no events found or unexpected structure
-            }
-
-
-            const events: DataItem[] = eventsArray.map((event: any) => ({
-              ...event,
-              type: endpoint.type,
-              dogName: dogData?.name, // Add dogName to each event - dogData should be fetched already
-            }));
-            combined = combined.concat(events);
+          let eventsArray = data;
+          if (type === "health" && Array.isArray(data)) {
+            // Cloud Function for health events returns an array directly
+            eventsArray = data;
+          } else if (data[key] && Array.isArray(data[key])) {
+            eventsArray = data[key];
+          } else {
+            eventsArray = [];
           }
-        });
 
+          // Attach dogName from dogData if available
+          const typedEvents: DataItem[] = eventsArray.map((event: any) => ({
+            ...event,
+            type,
+            dogName: dogData?.name,
+          }));
+
+          combined = combined.concat(typedEvents);
+        }
+
+        // Sort by eventDate descending
         combined.sort(
-          (a, b) =>
-            new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime()
+          (a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime()
         );
+
         setAllEvents(combined);
         setRecentEvents(combined.slice(0, 3));
         setLoading(false);
-
       } catch (err: any) {
         console.error("Error fetching events for dog:", err);
         setError(err);
@@ -132,32 +131,26 @@ useEffect(() => {
     if (dogId) {
       fetchAllEventsForDog();
     }
-  }, [dogId]);
+  }, [dogId, dogData]);
 
-  // Merge dogData into each diet schedule event.
+  // Merge dogData into diet schedule events
   useEffect(() => {
-    async function mergeDietSchedules() {
-      if (!dogData) {
-        return;
-      }
-      const dietEvents = allEvents.filter((event) => event.type === "diet-schedule");
-      const merged = dietEvents.map((event) => {
-        const mappedFeedingTimes = (event.feedingTimes as string[]).map((time) =>
-          time === "allDay" ? "all day" : time
-        );
-        return {
-          ...event,
-          type: "diet-schedule",
-          feedingTimes: mappedFeedingTimes,
-          breed: dogData.breed ?? "Unknown Breed",
-          dogName: dogData.name ?? "Unknown Dog",
-          dogImageUrl: dogData.imageUrl ?? "",
-        } as DietScheduleEvent;
-      });
-
-      setDietSchedules(merged);
-    }
-    mergeDietSchedules();
+    if (!dogData) return;
+    const dietEvents = allEvents.filter((event) => event.type === "diet-schedule");
+    const merged = dietEvents.map((event) => {
+      const mappedFeedingTimes = (event.feedingTimes as string[]).map((time) =>
+        time === "allDay" ? "all day" : time
+      );
+      return {
+        ...event,
+        type: "diet-schedule",
+        feedingTimes: mappedFeedingTimes,
+        breed: dogData.breed ?? "Unknown Breed",
+        dogName: dogData.name ?? "Unknown Dog",
+        dogImageUrl: dogData.imageUrl ?? "",
+      } as DietScheduleEvent;
+    });
+    setDietSchedules(merged);
   }, [allEvents, dogData]);
 
   if (loading) return <div>Loading events...</div>;
@@ -167,10 +160,20 @@ useEffect(() => {
 
   return (
     <div className="p-4">
-      <h1 className="text-3xl font-bold mb-4">Dog Events</h1>
+      {/* Header: large dog info on the left */}
+      <header className="mb-8">
+        {dogData && (
+          <InstructorInfo
+            name={dogData.name || "Unknown Dog"}
+            imageUrl={dogData.imageUrl}
+            breed={dogData.breed || "Unknown Breed"}
+            size="large"   // <-- Makes it bigger
+          />
+        )}
+      </header>
 
-       {/* Diet Schedule Section at the top */}
-       <section className="mb-8">
+      {/* Diet Schedule Section */}
+      <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-2">Diet Schedule</h2>
         {dietSchedules.length > 0 ? (
           <div className="grid grid-cols-1 gap-6">
@@ -198,13 +201,14 @@ useEffect(() => {
           <p>No recent events found.</p>
         )}
       </section>
+
       {/* All Events Section */}
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-2">All Events</h2>
         {nonDietEvents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {nonDietEvents.map((event, index) => (
-              <EventSummaryCard key={index} data={event} /> // EventSummaryCard should now receive correct props
+              <EventSummaryCard key={index} data={event} />
             ))}
           </div>
         ) : (
