@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/app/contexts/AuthContext"
+import { useAuth } from "@/app/contexts/AuthContext";
 import { collection, getDocs, query, where, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -77,15 +77,15 @@ export default function DogSelector({ onSelect, onHasMultipleDogs }: DogSelector
 
   return (
     <section className="mb-8">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-4">
         {dogs.map((dog) => (
           <button
             key={dog.id}
             onClick={() => handleDogClick(dog.id)}
-            className={`px-4 py-2 rounded-full shadow-md border transition-colors duration-200 ${
+            className={`px-4 py-2 rounded-full shadow-md border transition-transform duration-200 transform ${
               selectedDogId === dog.id
-                ? "bg-blue-500 text-white"
-                : "bg-white text-gray-800"
+                ? "bg-blue-500 text-white scale-120"
+                : "bg-white text-gray-800 hover:scale-110"
             }`}
           >
             {dog.name}
