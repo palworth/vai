@@ -12,6 +12,7 @@ import { getHealthEventsByDog, createHealthEvent, getHealthEventById, getAllHeal
 
 import { createHealthEventNew } from './api/events/createHealthEvent'
 import { getEventsByDog } from './api/events/getEventsByDog'
+import { getEventById } from './api/events/getEventById'
 //API key in google secret manager 
 const apiKey = defineSecret("GOOGLE_GENAI_API_KEY");
 
@@ -81,4 +82,4 @@ export const generateDogResponseFunction = onCallGenkit(
   dogResponseAction
 );
 
-export { getHealthEventsByDog, createHealthEvent, getHealthEventById, getAllHealthEventsByUser, getEventsByDog, createHealthEventNew };
+export { getHealthEventsByDog, createHealthEvent, getHealthEventById, getAllHealthEventsByUser, getEventsByDog, createHealthEventNew, getEventById};
