@@ -10,6 +10,8 @@ import { defineSecret } from 'firebase-functions/params';
 // Import your new API Cloud Functions:
 import { getHealthEventsByDog, createHealthEvent, getHealthEventById, getAllHealthEventsByUser } from './api/health-events/route';
 
+import { createHealthEventNew } from './api/events/createHealthEvent'
+import { getEventsByDog } from './api/events/getEventsByDog'
 //API key in google secret manager 
 const apiKey = defineSecret("GOOGLE_GENAI_API_KEY");
 
@@ -79,4 +81,4 @@ export const generateDogResponseFunction = onCallGenkit(
   dogResponseAction
 );
 
-export { getHealthEventsByDog, createHealthEvent, getHealthEventById, getAllHealthEventsByUser };
+export { getHealthEventsByDog, createHealthEvent, getHealthEventById, getAllHealthEventsByUser, getEventsByDog, createHealthEventNew };

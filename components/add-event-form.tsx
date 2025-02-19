@@ -169,11 +169,11 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
     let endpoint = "";
       if (eventType === "Diet Schedule") {
         endpoint = "/api/diet-schedule-event";
-      } else if (eventType === "Health") {
-        endpoint = "https://us-central1-vai2-80fb0.cloudfunctions.net/createHealthEvent";
+      } else if (eventType.toLowerCase() === "health") {
+        endpoint = "https://us-central1-vai2-80fb0.cloudfunctions.net/createHealthEventNew";
       } else {
-  endpoint = `/api/${eventType.toLowerCase()}-events`;
-}
+        endpoint = `/api/${eventType.toLowerCase()}-events`;
+      }
 
 
     try {
