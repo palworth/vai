@@ -25,8 +25,10 @@ export function useRoutes() {
         return "/diet";
       case "diet-schedule":
         return "/diet-schedule";
-        case "poop-journal":
-          return "/poop-journal";
+      case "poop-journal":
+        return "/poop-journal";
+      case "vet-landing":
+        return "/vet-landing";
       // default route
       default:
         return "/";

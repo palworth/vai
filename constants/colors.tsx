@@ -7,7 +7,8 @@ export const EVENT_COLORS = {
   health: "#4CAF50",
   // New event types:
   dietException: "#FFA500",            // Orange
-  poopJournal: "#8B4513",              // SaddleBrown
+  poopJournal: "#8B4513",
+  vetLanding: "#4169E2",              // SaddleBrown
   vetAppointment: "#4169E1",           // RoyalBlue
   vaccinationAppointment: "#32CD32",   // LimeGreen
   weightChange: "#FF4500",             // OrangeRed
