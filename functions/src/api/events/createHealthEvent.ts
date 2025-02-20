@@ -24,7 +24,7 @@ function formatTimestamp(timestamp: any): string {
  */
 export const createHealthEventNew = functions.https.onRequest({ cors: true }, async (req, res) => {
   try {
-    const { userId, dogId, eventDate, eventType, severity, notes } = req.body;
+    const { userId, dogId, eventDate, eventType, severity, notes, imageUrls } = req.body;
 
     // Validate required fields.
     if (!userId || !dogId) {
@@ -65,6 +65,9 @@ export const createHealthEventNew = functions.https.onRequest({ cors: true }, as
       dogAge: dogData?.age || null,
       sterilizationStatus: dogData?.sterilizationStatus !== undefined ? dogData.sterilizationStatus : null,
 
+      // Add imageUrls as a top-level field.
+      imageUrls: imageUrls || [],
+      
       // Health event–specific data.
       data: {
         eventType: eventType || null,
