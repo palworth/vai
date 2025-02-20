@@ -59,6 +59,32 @@ export const events: EventCard[] = [
     backgroundColor: EVENT_COLORS.health,
     href: "health",
   },
+  // New event types
+  {
+    title: "Diet Exception",
+    backgroundColor: EVENT_COLORS.dietException,
+    href: "diet-exception",
+  },
+  {
+    title: "Poop Journal",
+    backgroundColor: EVENT_COLORS.poopJournal,
+    href: "poop-journal",
+  },
+  {
+    title: "Vet Appointment",
+    backgroundColor: EVENT_COLORS.vetAppointment,
+    href: "vet-appointment",
+  },
+  {
+    title: "Vaccination Appointment",
+    backgroundColor: EVENT_COLORS.vaccinationAppointment,
+    href: "vaccination-appointment",
+  },
+  {
+    title: "Weight Change",
+    backgroundColor: EVENT_COLORS.weightChange,
+    href: "weight-change",
+  },
 ];
 
 export const featuredProgram: GuidedProgram = {

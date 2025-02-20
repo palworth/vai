@@ -5,8 +5,14 @@ export const EVENT_COLORS = {
   "diet-schedule": "#2e8b57",
   wellness: "#2B7CD5",
   health: "#4CAF50",
+  // New event types:
+  dietException: "#FFA500",            // Orange
+  poopJournal: "#8B4513",              // SaddleBrown
+  vetAppointment: "#4169E1",           // RoyalBlue
+  vaccinationAppointment: "#32CD32",   // LimeGreen
+  weightChange: "#FF4500",             // OrangeRed
   default: "#000000",
-  // Add a background for diet-schedule: a very lightly filled dark green
+  // Background for diet-schedule: a very lightly filled dark green
   "diet-schedule-bg": "bg-green-900/10",
 };
 
