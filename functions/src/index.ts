@@ -13,6 +13,17 @@ import { getHealthEventsByDog, createHealthEvent, getHealthEventById, getAllHeal
 import { createHealthEventNew } from './api/events/createHealthEvent'
 import { getEventsByDog } from './api/events/getEventsByDog'
 import { getEventById } from './api/events/getEventById'
+import { createWellnessEvent } from './api/events/createWellnessEvent'
+import { createBehaviorEvent } from './api/events/createBehaviorEvent'
+import { createExerciseEvent } from './api/events/createExerciseEvent'
+import { createDietScheduleEvent } from './api/events/createDietScheduleEvent'
+
+import { createPoopJournalEvent } from './api/events/createPoopJournalEvent'
+import { createVetAppointmentEvent } from './api/events/createVetAppointmentEvent'
+import { createVaccinationAppointmentEvent } from './api/events/createVaccinationAppointmentEvent'
+import { createWeightChangeEvent } from './api/events/createWeightChangeEvent'
+import { createDietExceptionEvent } from './api/events/createDietExceptionEvent'
+
 //API key in google secret manager 
 const apiKey = defineSecret("GOOGLE_GENAI_API_KEY");
 
@@ -82,4 +93,7 @@ export const generateDogResponseFunction = onCallGenkit(
   dogResponseAction
 );
 
-export { getHealthEventsByDog, createHealthEvent, getHealthEventById, getAllHealthEventsByUser, getEventsByDog, createHealthEventNew, getEventById};
+export { getHealthEventsByDog, createHealthEvent, getHealthEventById, getAllHealthEventsByUser, 
+          getEventsByDog, createHealthEventNew, getEventById, createBehaviorEvent, createExerciseEvent, 
+          createWellnessEvent, createDietScheduleEvent, createPoopJournalEvent, createVetAppointmentEvent,
+          createVaccinationAppointmentEvent, createWeightChangeEvent, createDietExceptionEvent};
