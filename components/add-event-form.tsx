@@ -5,7 +5,9 @@ import { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+// Existing event types arrays.
 const behaviorTypes = ["Barking", "Chewing", "Digging", "Jumping", "Whining", "Aggression", "Fear"];
 const foodTypes = ["dry kibble", "raw", "custom", "wet", "homemade"];
 const mentalStates = ["depressed", "anxious", "lethargic", "happy", "loving", "nervous"];
@@ -27,6 +29,11 @@ const eventColors = {
   "Diet Schedule": "#2e8b57",
   Wellness: "#2B7CD5",
   Health: "#4CAF50",
+  "Diet Exception": "#FFA500",
+  "Poop Journal": "#8B4513",
+  "Vet Appointment": "#4169E1",
+  "Vaccination Appointment": "#32CD32",
+  "Weight Change": "#FF4500",
 };
 
 interface AddEventFormProps {
@@ -51,7 +58,7 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
 
   // Additional state for Diet Schedule events
   const [scheduleName, setScheduleName] = useState("");
-  const [feedingTimes, setFeedingTimes] = useState<string[]>([]); // allowed values: "morning", "evening", "allDay"
+  const [feedingTimes, setFeedingTimes] = useState<string[]>([]);
 
   // Wellness-specific state
   const [mentalState, setMentalState] = useState("");
@@ -69,11 +76,40 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
   const [healthNotes, setHealthNotes] = useState("");
   const [healthSeverity, setHealthSeverity] = useState(5);
 
-  // Dog selection state – fetch dogs from the parent page (or within this component if needed)
+  // New: Diet Exception-specific state
+  const [dietExceptionFoodType, setDietExceptionFoodType] = useState("");
+  const [dietExceptionNotes, setDietExceptionNotes] = useState("");
+  const [dietExceptionAmount, setDietExceptionAmount] = useState(0);
+
+  // New: Poop Journal-specific state
+  const [poopJournalNotes, setPoopJournalNotes] = useState("");
+  const [poopJournalSolidScale, setPoopJournalSolidScale] = useState(5);
+
+  // New: Vet Appointment-specific state
+  const [vetAppointmentType, setVetAppointmentType] = useState("");
+  const [vetAppointmentVetName, setVetAppointmentVetName] = useState("");
+  const [vetAppointmentNotes, setVetAppointmentNotes] = useState("");
+  const [vetAppointmentDocuments, setVetAppointmentDocuments] = useState<string[]>([]);
+
+  // New: Vaccination Appointment-specific state
+  const [vaccinationAppointmentType, setVaccinationAppointmentType] = useState("");
+  const [vaccinationAppointmentVetName, setVaccinationAppointmentVetName] = useState("");
+  const [vaccinationAppointmentNotes, setVaccinationAppointmentNotes] = useState("");
+  const [vaccinationAppointmentDocuments, setVaccinationAppointmentDocuments] = useState<string[]>([]);
+
+  // New: Weight Change-specific state
+  const [weightChangeWeight, setWeightChangeWeight] = useState(0);
+
+  // New: Image upload state (for all event types)
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+
+  // Dog selection state
   const [dogs, setDogs] = useState<any[]>([]);
   const [selectedDogId, setSelectedDogId] = useState<string>("");
 
   const { user } = useAuth();
+  const storage = getStorage();
 
   // Fetch the list of dogs for the current user.
   useEffect(() => {
@@ -87,7 +123,6 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
       })
       .then((data) => {
         setDogs(data);
-        // If only one dog exists, automatically set selectedDogId.
         if (data.length === 1) {
           setSelectedDogId(data[0].id);
         }
@@ -103,19 +138,42 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
   const handleFeedingTimeChange = (time: string, checked: boolean) => {
     if (time === "allDay") {
       if (checked) {
-        // If "allDay" is checked, set feedingTimes to only "allDay"
         setFeedingTimes(["allDay"]);
       } else {
         setFeedingTimes([]);
       }
     } else {
-      // If "allDay" is already selected, ignore changes to other options.
       if (feedingTimes.includes("allDay")) return;
       if (checked) {
         setFeedingTimes([...feedingTimes, time]);
       } else {
         setFeedingTimes(feedingTimes.filter((t) => t !== time));
       }
+    }
+  };
+
+  // Handler for file input change. Uploads selected files and stores their URLs.
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      setSelectedFiles(files);
+      const urls: string[] = [];
+      // Loop through each selected file.
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        // Create a unique file path in storage (you might include userId, dogId, event type, etc.)
+        const fileRef = ref(storage, `events/${selectedDogId}/${Date.now()}-${file.name}`);
+        try {
+          // Upload the file.
+          await uploadBytes(fileRef, file);
+          // Get the download URL.
+          const downloadURL = await getDownloadURL(fileRef);
+          urls.push(downloadURL);
+        } catch (error) {
+          console.error("Error uploading file:", error);
+        }
+      }
+      setImageUrls(urls);
     }
   };
 
@@ -127,14 +185,15 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
       return;
     }
 
-    // Build common payload
+    // Build common payload.
     const payload: any = {
       eventDate: startDate.toISOString(),
       userId: user.uid,
       dogId: selectedDogId,
+      imageUrls, // Include uploaded image URLs.
     };
 
-    // Append event-specific fields
+    // Append event-specific fields.
     if (eventType === "Behavior") {
       payload.behaviorType = behaviorType;
       payload.severity = severity;
@@ -162,19 +221,52 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
       payload.eventType = healthEventType;
       payload.severity = healthSeverity;
       payload.notes = healthNotes;
+    } else if (eventType === "Diet Exception") {
+      payload.foodType = dietExceptionFoodType;
+      payload.notes = dietExceptionNotes;
+      payload.amount = dietExceptionAmount;
+    } else if (eventType === "Poop Journal") {
+      payload.notes = poopJournalNotes;
+      payload.solidScale = poopJournalSolidScale;
+    } else if (eventType === "Vet Appointment") {
+      payload.appointmentType = vetAppointmentType;
+      payload.vetName = vetAppointmentVetName;
+      payload.notes = vetAppointmentNotes;
+      payload.vetDocuments = vetAppointmentDocuments;
+    } else if (eventType === "Vaccination Appointment") {
+      payload.vaccinationsType = vaccinationAppointmentType;
+      payload.vetName = vaccinationAppointmentVetName;
+      payload.notes = vaccinationAppointmentNotes;
+      payload.vetDocuments = vaccinationAppointmentDocuments;
+    } else if (eventType === "Weight Change") {
+      payload.weight = weightChangeWeight;
     }
 
     // Determine API endpoint based on eventType.
-    // For Diet Schedule, we use the dedicated API route.
     let endpoint = "";
-      if (eventType === "Diet Schedule") {
-        endpoint = "/api/diet-schedule-event";
-      } else if (eventType.toLowerCase() === "health") {
-        endpoint = "https://us-central1-vai2-80fb0.cloudfunctions.net/createHealthEventNew";
-      } else {
-        endpoint = `/api/${eventType.toLowerCase()}-events`;
-      }
-
+    if (eventType === "Diet Schedule") {
+      endpoint = "https://us-central1-vai2-80fb0.cloudfunctions.net/createDietScheduleEvent";
+    } else if (eventType.toLowerCase() === "health") {
+      endpoint = "https://us-central1-vai2-80fb0.cloudfunctions.net/createHealthEventNew";
+    } else if (eventType.toLowerCase() === "behavior") {
+      endpoint = "https://us-central1-vai2-80fb0.cloudfunctions.net/createBehaviorEvent";
+    } else if (eventType.toLowerCase() === "wellness") {
+      endpoint = "https://us-central1-vai2-80fb0.cloudfunctions.net/createWellnessEvent";
+    } else if (eventType.toLowerCase() === "exercise") {
+      endpoint = "https://us-central1-vai2-80fb0.cloudfunctions.net/createExerciseEvent";
+    } else if (eventType === "Diet Exception") {
+      endpoint = "https://us-central1-vai2-80fb0.cloudfunctions.net/createDietExceptionEvent";
+    } else if (eventType === "Poop Journal") {
+      endpoint = "https://us-central1-vai2-80fb0.cloudfunctions.net/createPoopJournalEvent";
+    } else if (eventType === "Vet Appointment") {
+      endpoint = "https://us-central1-vai2-80fb0.cloudfunctions.net/createVetAppointmentEvent";
+    } else if (eventType === "Vaccination Appointment") {
+      endpoint = "https://us-central1-vai2-80fb0.cloudfunctions.net/createVaccinationAppointmentEvent";
+    } else if (eventType === "Weight Change") {
+      endpoint = "https://us-central1-vai2-80fb0.cloudfunctions.net/createWeightChangeEvent";
+    } else {
+      endpoint = `/api/${eventType.toLowerCase()}-events`;
+    }
 
     try {
       const res = await fetch(endpoint, {
@@ -188,7 +280,6 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
       const responseData = await res.json();
       console.log("Event created successfully:", responseData);
       onSuccess();
-      // Optionally, reset form fields here.
     } catch (error: any) {
       console.error("Error creating event:", error);
     }
@@ -239,6 +330,7 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
         </div>
       </div>
 
+      {/* Conditional UI for various event types */}
       {eventType === "Behavior" && (
         <>
           <div className="space-y-4">
@@ -556,7 +648,7 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
       {eventType === "Health" && (
         <>
           <div className="space-y-4">
-            <h3 className="text-gray-400 text-sm font-medium tracking-wider">HEALTH EVENT TYPE</h3>
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">EVENT TYPE</h3>
             <div className="bg-white rounded-2xl">
               <input
                 type="text"
@@ -597,6 +689,189 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
           </div>
         </>
       )}
+
+      {eventType === "Diet Exception" && (
+        <>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">FOOD TYPE</h3>
+            <div className="bg-white rounded-2xl">
+              <input
+                type="text"
+                value={dietExceptionFoodType}
+                onChange={(e) => setDietExceptionFoodType(e.target.value)}
+                placeholder="Enter food type"
+                className="w-full p-4 text-gray-900 bg-transparent placeholder-gray-400"
+              />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">NOTES</h3>
+            <div className="bg-white rounded-2xl">
+              <textarea
+                value={dietExceptionNotes}
+                onChange={(e) => setDietExceptionNotes(e.target.value)}
+                placeholder="Enter notes here..."
+                className="w-full p-4 text-gray-900 bg-transparent placeholder-gray-400 resize-none h-32"
+              />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">AMOUNT</h3>
+            <div className="bg-white rounded-2xl">
+              <input
+                type="number"
+                value={dietExceptionAmount}
+                onChange={(e) => setDietExceptionAmount(Number(e.target.value))}
+                placeholder="Enter amount"
+                className="w-full p-4 text-gray-900 bg-transparent placeholder-gray-400"
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {eventType === "Poop Journal" && (
+        <>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">NOTES</h3>
+            <div className="bg-white rounded-2xl">
+              <textarea
+                value={poopJournalNotes}
+                onChange={(e) => setPoopJournalNotes(e.target.value)}
+                placeholder="Enter notes here..."
+                className="w-full p-4 text-gray-900 bg-transparent placeholder-gray-400 resize-none h-32"
+              />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">SOLID SCALE</h3>
+            <div className="bg-white rounded-2xl p-4">
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={poopJournalSolidScale}
+                  onChange={(e) => setPoopJournalSolidScale(Number(e.target.value))}
+                  className="w-full"
+                  style={{ accentColor: currentColor }}
+                />
+                <span className="text-gray-900 min-w-[1.5rem]">{poopJournalSolidScale}</span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+{eventType === "Vet Appointment" && (
+        <>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">APPOINTMENT TYPE</h3>
+            <div className="bg-white rounded-2xl">
+              <input
+                type="text"
+                value={vetAppointmentType}
+                onChange={(e) => setVetAppointmentType(e.target.value)}
+                placeholder="Enter appointment type"
+                className="w-full p-4 text-gray-900 bg-transparent placeholder-gray-400"
+              />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">VET NAME</h3>
+            <div className="bg-white rounded-2xl">
+              <input
+                type="text"
+                value={vetAppointmentVetName}
+                onChange={(e) => setVetAppointmentVetName(e.target.value)}
+                placeholder="Enter vet name"
+                className="w-full p-4 text-gray-900 bg-transparent placeholder-gray-400"
+              />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">NOTES</h3>
+            <div className="bg-white rounded-2xl">
+              <textarea
+                value={vetAppointmentNotes}
+                onChange={(e) => setVetAppointmentNotes(e.target.value)}
+                placeholder="Enter notes here..."
+                className="w-full p-4 text-gray-900 bg-transparent placeholder-gray-400 resize-none h-32"
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {eventType === "Vaccination Appointment" && (
+        <>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">VACCINATIONS TYPE</h3>
+            <div className="bg-white rounded-2xl">
+              <input
+                type="text"
+                value={vaccinationAppointmentType}
+                onChange={(e) => setVaccinationAppointmentType(e.target.value)}
+                placeholder="Enter vaccinations type"
+                className="w-full p-4 text-gray-900 bg-transparent placeholder-gray-400"
+              />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">VET NAME</h3>
+            <div className="bg-white rounded-2xl">
+              <input
+                type="text"
+                value={vaccinationAppointmentVetName}
+                onChange={(e) => setVaccinationAppointmentVetName(e.target.value)}
+                placeholder="Enter vet name"
+                className="w-full p-4 text-gray-900 bg-transparent placeholder-gray-400"
+              />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">NOTES</h3>
+            <div className="bg-white rounded-2xl">
+              <textarea
+                value={vaccinationAppointmentNotes}
+                onChange={(e) => setVaccinationAppointmentNotes(e.target.value)}
+                placeholder="Enter notes here..."
+                className="w-full p-4 text-gray-900 bg-transparent placeholder-gray-400 resize-none h-32"
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {eventType === "Weight Change" && (
+        <>
+          <div className="space-y-4">
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">WEIGHT</h3>
+            <div className="bg-white rounded-2xl">
+              <input
+                type="number"
+                value={weightChangeWeight}
+                onChange={(e) => setWeightChangeWeight(Number(e.target.value))}
+                placeholder="Enter weight"
+                className="w-full p-4 text-gray-900 bg-transparent placeholder-gray-400"
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Upload Photos section moved to bottom */}
+      <div className="space-y-4">
+        <h3 className="text-gray-400 text-sm font-medium tracking-wider">Upload Photos</h3>
+        <div className="bg-white rounded-2xl p-4">
+          <input
+            type="file"
+            multiple
+            onChange={handleFileChange}
+            className="w-full"
+          />
+        </div>
+      </div>
 
       <button type="submit" className="w-full py-4 rounded-full font-medium text-white" style={{ backgroundColor: currentColor }}>
         SAVE
