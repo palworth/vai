@@ -1,3 +1,4 @@
+// File: /components/action-menu.tsx
 "use client";
 
 import { useState } from "react";
@@ -6,14 +7,17 @@ import { useRouter } from "next/navigation";
 import type { EventCard } from "@/types";
 import { Modal } from "./ui/modal";
 import { AddEventForm } from "@/components/add-event-form";
+import { PoopJournalForm } from "@/components/PoopJournalForm";
 
 interface ActionMenuProps {
   isOpen: boolean;
   onClose: () => void;
   events: EventCard[];
+  dogId?: string;
+  onRefresh?: () => void; // New prop to trigger refresh
 }
 
-export function ActionMenu({ isOpen, onClose, events }: ActionMenuProps) {
+export function ActionMenu({ isOpen, onClose, events, dogId, onRefresh }: ActionMenuProps) {
   const [selectedEvent, setSelectedEvent] = useState<EventCard | null>(null);
   const router = useRouter();
 
@@ -75,19 +79,30 @@ export function ActionMenu({ isOpen, onClose, events }: ActionMenuProps) {
         onClose={() => setSelectedEvent(null)}
         title={selectedEvent ? selectedEvent.title : ""}
       >
-        <AddEventForm
-          eventType={selectedEvent ? selectedEvent.title : ""}
-          onSuccess={() => {
-            // Clear the selected event to close the modal.
-            setSelectedEvent(null);
-            // Also call the parent's onClose to close the floating menu.
-            onClose();
-            // After a short delay, navigate to the home page.
-            setTimeout(() => {
-              router.push("/");
-            }, 200);
-          }}
-        />
+        {selectedEvent?.title === "Poop Journal" ? (
+          <PoopJournalForm
+            dogId={dogId!}
+            onSuccess={() => {
+              setSelectedEvent(null);
+              onClose();
+              // Call the refresh callback passed from the page
+              if (onRefresh) {
+                onRefresh();
+              }
+            }}
+          />
+        ) : (
+          <AddEventForm
+            eventType={selectedEvent ? selectedEvent.title : ""}
+            onSuccess={() => {
+              setSelectedEvent(null);
+              onClose();
+              if (onRefresh) {
+                onRefresh();
+              }
+            }}
+          />
+        )}
       </Modal>
     </>
   );

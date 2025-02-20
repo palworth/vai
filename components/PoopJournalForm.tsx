@@ -1,32 +1,63 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 interface PoopJournalFormProps {
+  dogId: string; // New prop to pass the selected dog's ID
   onSuccess: () => void;
 }
 
-export function PoopJournalForm({ onSuccess }: PoopJournalFormProps) {
+export function PoopJournalForm({ dogId, onSuccess }: PoopJournalFormProps) {
   const [startDate, setStartDate] = useState(new Date());
   const [notes, setNotes] = useState("");
   const [solidScale, setSolidScale] = useState(5);
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const { user } = useAuth();
+  const storage = getStorage();
 
+  // Handler for file input change: uploads files and collects download URLs.
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      setSelectedFiles(files);
+      const urls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        // Create a unique file path (include userId and event type)
+        const fileRef = ref(
+          storage,
+          `events/poopJournal/${user?.uid}/${Date.now()}-${file.name}`
+        );
+        try {
+          await uploadBytes(fileRef, file);
+          const downloadURL = await getDownloadURL(fileRef);
+          urls.push(downloadURL);
+        } catch (error) {
+          console.error("Error uploading file:", error);
+        }
+      }
+      setImageUrls(urls);
+    }
+  };
+
+  // Handler for form submission: builds payload and posts to the Poop Journal endpoint.
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
 
+    // Now include the dogId from props in your payload
     const payload = {
       eventDate: startDate.toISOString(),
       userId: user.uid,
-      // Assume you have a way to determine the selected dog ID on this page.
-      // This might come from context or passed props.
-      dogId: "selected-dog-id", 
+      dogId, // This is required by your API
       notes,
       solidScale,
+      imageUrls, // URLs from uploaded photos
     };
 
     try {
@@ -94,7 +125,19 @@ export function PoopJournalForm({ onSuccess }: PoopJournalFormProps) {
         </div>
       </div>
 
-      <button type="submit" className="w-full py-4 rounded-full font-medium text-white" style={{ backgroundColor: "#8B4513" }}>
+      {/* File Upload Section */}
+      <div className="space-y-4">
+        <h3 className="text-gray-400 text-sm font-medium tracking-wider">Upload Photos</h3>
+        <div className="bg-white rounded-2xl p-4">
+          <input type="file" multiple onChange={handleFileChange} className="w-full" />
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        className="w-full py-4 rounded-full font-medium text-white"
+        style={{ backgroundColor: "#8B4513" }}
+      >
         SAVE
       </button>
     </form>
