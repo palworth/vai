@@ -137,13 +137,7 @@ body {
   background: #2c2c2e;
 }
 
-.react-datepicker__time-container
-  .react-datepicker__time
-  .react-datepicker__time-box
-  ul.react-datepicker__time-list
-  li.react-datepicker__time-list-item {
-  color: white;
-}
+
 
 .react-datepicker__time-container
   .react-datepicker__time
@@ -160,3 +154,12 @@ body {
   li.react-datepicker__time-list-item--selected {
   background-color: #0a84ff;
 }
+
+/* Make the time selection text black */
+.react-datepicker__time-container
+  .react-datepicker__time
+  .react-datepicker__time-box
+  ul.react-datepicker__time-list li {
+  color: #000000;
+}
+
