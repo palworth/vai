@@ -13,9 +13,9 @@ export default function HealthEventPage() {
   useEffect(() => {
     if (!id) return;
     console.log("id", id)
-    const lol = fetch(`https://us-central1-vai2-80fb0.cloudfunctions.net/getHealthEventById?id=${id}`)
+    const lol = fetch(`https://us-central1-vai2-80fb0.cloudfunctions.net/getEventById?id=${id}`)
     console.log("lol", lol) 
-    fetch(`https://us-central1-vai2-80fb0.cloudfunctions.net/getHealthEventById?id=${id}`) 
+    fetch(`https://us-central1-vai2-80fb0.cloudfunctions.net/getEventById?id=${id}`) 
       .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -36,6 +36,6 @@ export default function HealthEventPage() {
   if (loading) return <div>Loading event details...</div>;
   if (error) return <div>Error: {error.message}</div>;
   if (!eventData) return <div>Event not found</div>;
-
+  console.log(eventData.data)
   return <EventDetailView data={eventData} />;
 }

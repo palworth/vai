@@ -30,7 +30,7 @@ export type DataItem = {
   | {
       type: "diet-schedule";
       scheduleName: string;
-      feedingTimes: FeedingTimeOption[]; // Allowed values: "morning", "evening", or "allDay"
+      feedingTimes: FeedingTimeOption[]; // Allowed values: "morning", "evening", "allDay"
       foodType: string;
       brandName: string;
       quantity: number;
@@ -46,6 +46,35 @@ export type DataItem = {
       eventType: string;
       severity: number;
       notes: string;
+    }
+  | {
+      type: "dietException";
+      foodType: string;
+      notes: string;
+      amount: number;
+    }
+  | {
+      type: "poopJournal";
+      notes: string;
+      solidScale: number;
+    }
+  | {
+      type: "vetAppointment";
+      appointmentType: string;
+      vetName: string;
+      notes: string;
+      vetDocuments: string[];
+    }
+  | {
+      type: "vaccinationAppointment";
+      vaccinationsType: string;
+      vetName: string;
+      notes: string;
+      vetDocuments: string[];
+    }
+  | {
+      type: "weightChange";
+      weight: number;
     }
 );
 

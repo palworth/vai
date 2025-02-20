@@ -71,7 +71,8 @@ export default function DogDetailPage() {
           { url: `/api/diet-events/data/by_dog?dogId=${dogId}`, type: "diet" },
           { url: `/api/diet-schedule-event/data/by_dog?dogId=${dogId}`, type: "diet-schedule" },
           { url: `/api/exercise-events/data/by_dog?dogId=${dogId}`, type: "exercise" },
-          { url: `https://us-central1-vai2-80fb0.cloudfunctions.net/getHealthEventsByDog?dogId=${dogId}`, type: "health" },
+          { url: `https://us-central1-vai2-80fb0.cloudfunctions.net/getEventsByDog?dogId=${dogId}&type=health`, type: "health" },
+          // { url: `https://us-central1-vai2-80fb0.cloudfunctions.net/getHealthEventsByDog?dogId=${dogId}`, type: "health" },
           { url: `/api/wellness-events/data/by_dog?dogId=${dogId}`, type: "wellness" },
         ];
 
