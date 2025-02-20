@@ -4,17 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import DogSelector, { Dog } from "@/components/DogSelector";
 import PoopJournalStats from "@/components/PoopJournalStats";
-import { FloatingActionButton } from "@/components/floating-action-button";
-
-interface PoopJournalEvent {
-  id: string;
-  eventDate: string;
-  type: string;
-  data: {
-    solidScale?: number;
-  };
-  imageUrls?: string[];
-}
+import { FloatingActionButtonPoop } from "@/components/floating-action-button-poop";
+import { PoopJournalSummaryCard, PoopJournalEvent } from "@/components/poop-journal-summary-card";
 
 export default function PoopJournalPage() {
   const { user } = useAuth();
@@ -22,10 +13,9 @@ export default function PoopJournalPage() {
   const [selectedDogEvents, setSelectedDogEvents] = useState<PoopJournalEvent[]>([]);
   const [hasMultipleDogs, setHasMultipleDogs] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
-  // State for the modal image URL.
   const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
+  const [refreshCount, setRefreshCount] = useState<number>(0);
 
-  // Fetch poop journal events for the selected dog.
   const fetchEventsByDog = useCallback(async (dogId: string) => {
     try {
       setLoading(true);
@@ -46,19 +36,21 @@ export default function PoopJournalPage() {
     }
   }, []);
 
-  // When a dog is selected, fetch its events.
   useEffect(() => {
     if (selectedDog) {
       fetchEventsByDog(selectedDog.id);
     } else {
       setSelectedDogEvents([]);
     }
-  }, [selectedDog, fetchEventsByDog]);
+  }, [selectedDog, fetchEventsByDog, refreshCount]);
+
+  const refreshEvents = () => {
+    setRefreshCount((prev) => prev + 1);
+  };
 
   return (
     <div className="p-4">
       <h1 className="text-3xl font-bold mb-4">Poop Journal</h1>
-      {/* Dog selector is rendered at the top */}
       <DogSelector onSelect={setSelectedDog} onHasMultipleDogs={setHasMultipleDogs} />
 
       {selectedDog ? (
@@ -68,43 +60,19 @@ export default function PoopJournalPage() {
               All {selectedDog.name} Poop Journal Entries
             </h2>
           )}
-          {/* Render stats above the event list */}
           <PoopJournalStats events={selectedDogEvents} />
 
           {loading ? (
             <p>Loading dog events...</p>
           ) : selectedDogEvents.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {selectedDogEvents.map((event) => {
-                // Format event date to local date/time.
-                const localDateTime = new Date(event.eventDate).toLocaleString("en-US", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                });
-                return (
-                  <div key={event.id} className="border rounded p-4 shadow">
-                    <p>
-                      <strong>Date:</strong> {localDateTime}
-                    </p>
-                    <p>
-                      <strong>Solidity Scale:</strong> {event.data?.solidScale}
-                    </p>
-                    <button
-                      onClick={() => {
-                        if (event.imageUrls && event.imageUrls.length > 0) {
-                          // Open image in a modal within the app.
-                          setModalImageUrl(event.imageUrls[0]);
-                        } else {
-                          alert("No image available");
-                        }
-                      }}
-                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                      Click here to see image
-                    </button>
-                  </div>
-                );
-              })}
+            <div className="grid grid-cols-1 gap-6">
+              {selectedDogEvents.map((event) => (
+                <PoopJournalSummaryCard
+                  key={event.id}
+                  event={event}
+                  onViewImage={(url) => setModalImageUrl(url)}
+                />
+              ))}
             </div>
           ) : (
             <p>No poop journal entries found for this dog.</p>
@@ -114,7 +82,6 @@ export default function PoopJournalPage() {
         <p>Please select a dog to view its Poop Journal entries.</p>
       )}
 
-      {/* Modal for displaying the image */}
       {modalImageUrl && (
         <div
           className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
@@ -135,8 +102,7 @@ export default function PoopJournalPage() {
         </div>
       )}
 
-      {/* Render the floating action button in the bottom-right corner */}
-      <FloatingActionButton />
+      <FloatingActionButtonPoop dogId={selectedDog?.id} onRefresh={refreshEvents} />
     </div>
   );
 }
