@@ -89,18 +89,18 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
   const [vetAppointmentType, setVetAppointmentType] = useState("");
   const [vetAppointmentVetName, setVetAppointmentVetName] = useState("");
   const [vetAppointmentNotes, setVetAppointmentNotes] = useState("");
-  const [vetAppointmentDocuments, setVetAppointmentDocuments] = useState<string[]>([]);
+  // Removed the comma-separated input for vet documents in favor of file upload
 
   // New: Vaccination Appointment-specific state
   const [vaccinationAppointmentType, setVaccinationAppointmentType] = useState("");
   const [vaccinationAppointmentVetName, setVaccinationAppointmentVetName] = useState("");
   const [vaccinationAppointmentNotes, setVaccinationAppointmentNotes] = useState("");
-  const [vaccinationAppointmentDocuments, setVaccinationAppointmentDocuments] = useState<string[]>([]);
+  // Removed the comma-separated input for vet documents in favor of file upload
 
   // New: Weight Change-specific state
   const [weightChangeWeight, setWeightChangeWeight] = useState(0);
 
-  // New: Image upload state (for all event types)
+  // New: Image/file upload state (for all event types)
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
@@ -190,7 +190,7 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
       eventDate: startDate.toISOString(),
       userId: user.uid,
       dogId: selectedDogId,
-      imageUrls, // Include uploaded image URLs.
+      imageUrls, // Include uploaded file URLs.
     };
 
     // Append event-specific fields.
@@ -232,12 +232,12 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
       payload.appointmentType = vetAppointmentType;
       payload.vetName = vetAppointmentVetName;
       payload.notes = vetAppointmentNotes;
-      payload.vetDocuments = vetAppointmentDocuments;
+      // File uploads for vet documents will be handled via the common upload section.
     } else if (eventType === "Vaccination Appointment") {
       payload.vaccinationsType = vaccinationAppointmentType;
       payload.vetName = vaccinationAppointmentVetName;
       payload.notes = vaccinationAppointmentNotes;
-      payload.vetDocuments = vaccinationAppointmentDocuments;
+      // File uploads for vet documents will be handled via the common upload section.
     } else if (eventType === "Weight Change") {
       payload.weight = weightChangeWeight;
     }
@@ -763,7 +763,7 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
         </>
       )}
 
-{eventType === "Vet Appointment" && (
+      {eventType === "Vet Appointment" && (
         <>
           <div className="space-y-4">
             <h3 className="text-gray-400 text-sm font-medium tracking-wider">APPOINTMENT TYPE</h3>
@@ -860,9 +860,11 @@ export function AddEventForm({ eventType, onSuccess }: AddEventFormProps) {
         </>
       )}
 
-      {/* Upload Photos section moved to bottom */}
+      {/* File Upload section moved to bottom */}
       <div className="space-y-4">
-        <h3 className="text-gray-400 text-sm font-medium tracking-wider">Upload Photos</h3>
+        <h3 className="text-gray-400 text-sm font-medium tracking-wider">
+          {(eventType === "Vet Appointment" || eventType === "Vaccination Appointment") ? "Upload Vet Documents" : "Upload Photos"}
+        </h3>
         <div className="bg-white rounded-2xl p-4">
           <input
             type="file"
