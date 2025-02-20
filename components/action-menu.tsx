@@ -1,4 +1,3 @@
-// File: /components/action-menu.tsx
 "use client";
 
 import { useState } from "react";
@@ -8,6 +7,7 @@ import type { EventCard } from "@/types";
 import { Modal } from "./ui/modal";
 import { AddEventForm } from "@/components/add-event-form";
 import { PoopJournalForm } from "@/components/PoopJournalForm";
+import { VetEventsForm } from "@/components/VetEventsForm";
 
 interface ActionMenuProps {
   isOpen: boolean;
@@ -16,6 +16,13 @@ interface ActionMenuProps {
   dogId?: string;
   onRefresh?: () => void; // New prop to trigger refresh
 }
+
+// Define a set of vet event titles
+const vetEventTypes = new Set([
+  "Vet Appointment",
+  "Vaccination Appointment",
+  "Weight Change",
+]);
 
 export function ActionMenu({ isOpen, onClose, events, dogId, onRefresh }: ActionMenuProps) {
   const [selectedEvent, setSelectedEvent] = useState<EventCard | null>(null);
@@ -79,13 +86,24 @@ export function ActionMenu({ isOpen, onClose, events, dogId, onRefresh }: Action
         onClose={() => setSelectedEvent(null)}
         title={selectedEvent ? selectedEvent.title : ""}
       >
-        {selectedEvent?.title === "Poop Journal" ? (
+        {selectedEvent && vetEventTypes.has(selectedEvent.title) ? (
+          <VetEventsForm
+            eventType={selectedEvent.title as "Vet Appointment" | "Vaccination Appointment" | "Weight Change"}
+            dogId={dogId!}
+            onSuccess={() => {
+              setSelectedEvent(null);
+              onClose();
+              if (onRefresh) {
+                onRefresh();
+              }
+            }}
+          />
+        ) : selectedEvent?.title === "Poop Journal" ? (
           <PoopJournalForm
             dogId={dogId!}
             onSuccess={() => {
               setSelectedEvent(null);
               onClose();
-              // Call the refresh callback passed from the page
               if (onRefresh) {
                 onRefresh();
               }
