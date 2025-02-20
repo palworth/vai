@@ -17,16 +17,26 @@ interface ActionMenuProps {
   onRefresh?: () => void; // New prop to trigger refresh
 }
 
-// Define a set of vet event titles
+// Updated: include "Health" as a vet-related event type so it uses VetEventsForm
 const vetEventTypes = new Set([
   "Vet Appointment",
   "Vaccination Appointment",
   "Weight Change",
+  "Health"
 ]);
 
 export function ActionMenu({ isOpen, onClose, events, dogId, onRefresh }: ActionMenuProps) {
   const [selectedEvent, setSelectedEvent] = useState<EventCard | null>(null);
   const router = useRouter();
+
+  // A helper callback that closes the modal and menu immediately after a save
+  const handleSuccess = () => {
+    setSelectedEvent(null);
+    onClose();
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
 
   return (
     <>
@@ -88,37 +98,19 @@ export function ActionMenu({ isOpen, onClose, events, dogId, onRefresh }: Action
       >
         {selectedEvent && vetEventTypes.has(selectedEvent.title) ? (
           <VetEventsForm
-            eventType={selectedEvent.title as "Vet Appointment" | "Vaccination Appointment" | "Weight Change"}
+            eventType={selectedEvent.title as "Vet Appointment" | "Vaccination Appointment" | "Weight Change" | "Health"}
             dogId={dogId!}
-            onSuccess={() => {
-              setSelectedEvent(null);
-              onClose();
-              if (onRefresh) {
-                onRefresh();
-              }
-            }}
+            onSuccess={handleSuccess}
           />
         ) : selectedEvent?.title === "Poop Journal" ? (
           <PoopJournalForm
             dogId={dogId!}
-            onSuccess={() => {
-              setSelectedEvent(null);
-              onClose();
-              if (onRefresh) {
-                onRefresh();
-              }
-            }}
+            onSuccess={handleSuccess}
           />
         ) : (
           <AddEventForm
             eventType={selectedEvent ? selectedEvent.title : ""}
-            onSuccess={() => {
-              setSelectedEvent(null);
-              onClose();
-              if (onRefresh) {
-                onRefresh();
-              }
-            }}
+            onSuccess={handleSuccess}
           />
         )}
       </Modal>
