@@ -59,42 +59,42 @@ export const getHealthEventsByDog = functions.https.onRequest({ cors: true }, as
   }
 });
 
-// POST /api/health-events (Cloud Function name: createHealthEvent)
-export const createHealthEvent = functions.https.onRequest({ cors: true }, async (req, res) => {
-  try {
-    const body = req.body;
-    const dogId = body.dogId;
-    const userId = body.userId;
-    if (!dogId || !userId) {
-      res.status(400).json({ error: "dogId and userId are required in the request body" });
-      return;
-    }
-    const dogRef = db.collection("dogs").doc(body.dogId);
-    const userRef = db.collection("users").doc(body.userId);
-    const now = admin.firestore.FieldValue.serverTimestamp();
-    const eventData = {
-      ...body,
-      dogId: dogRef,
-      userId: userRef,
-      createdAt: now,
-      updatedAt: now,
-      eventDate: body.eventDate
-        ? admin.firestore.Timestamp.fromDate(new Date(body.eventDate))
-        : now,
-    };
-    const docRef = await db.collection("healthEvents").add(eventData);
-    res.status(201).json({
-      id: docRef.id,
-      ...body,
-      createdAt: formatTimestamp(eventData.createdAt),
-      updatedAt: formatTimestamp(eventData.updatedAt),
-      eventDate: formatTimestamp(eventData.eventDate),
-    });
-  } catch (error) {
-    console.error("Error creating health event:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
+// // POST /api/health-events (Cloud Function name: createHealthEvent)
+// export const createHealthEvent = functions.https.onRequest({ cors: true }, async (req, res) => {
+//   try {
+//     const body = req.body;
+//     const dogId = body.dogId;
+//     const userId = body.userId;
+//     if (!dogId || !userId) {
+//       res.status(400).json({ error: "dogId and userId are required in the request body" });
+//       return;
+//     }
+//     const dogRef = db.collection("dogs").doc(body.dogId);
+//     const userRef = db.collection("users").doc(body.userId);
+//     const now = admin.firestore.FieldValue.serverTimestamp();
+//     const eventData = {
+//       ...body,
+//       dogId: dogRef,
+//       userId: userRef,
+//       createdAt: now,
+//       updatedAt: now,
+//       eventDate: body.eventDate
+//         ? admin.firestore.Timestamp.fromDate(new Date(body.eventDate))
+//         : now,
+//     };
+//     const docRef = await db.collection("healthEvents").add(eventData);
+//     res.status(201).json({
+//       id: docRef.id,
+//       ...body,
+//       createdAt: formatTimestamp(eventData.createdAt),
+//       updatedAt: formatTimestamp(eventData.updatedAt),
+//       eventDate: formatTimestamp(eventData.eventDate),
+//     });
+//   } catch (error) {
+//     console.error("Error creating health event:", error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// });
 
 // GET /api/health-events/{id} (Cloud Function name: getHealthEventById)
 export const getHealthEventById = functions.https.onRequest({ cors: true }, async (req, res) => {
