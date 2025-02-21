@@ -64,8 +64,6 @@ export default function RagChatPage() {
         testQuestion: currentInput,
       });
       
-
-      
       let content: string;
       if (typeof result.data === "string") {
         content = result.data;
@@ -85,9 +83,7 @@ export default function RagChatPage() {
       console.error("Error sending message:", err);
       const errorMsg: Message = {
         role: "assistant",
-        content: `Error: ${
-          err instanceof Error ? err.message : "An unknown error occurred"
-        }`,
+        content: `Error: ${err instanceof Error ? err.message : "An unknown error occurred"}`,
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
@@ -95,8 +91,9 @@ export default function RagChatPage() {
     }
   };
 
-  const onInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
+  // Updated onInputChange to accept a string value.
+  const onInputChange = (value: string) => {
+    setInput(value);
   };
 
   const onSelectDog = (dogId: string) => {
@@ -115,7 +112,7 @@ export default function RagChatPage() {
     });
   };
 
-  // Make the container fill the screen, removing the header entirely.
+  // Make the container fill the screen, removing any header.
   return (
     <div className="w-screen h-screen">
       <ChatInterface
