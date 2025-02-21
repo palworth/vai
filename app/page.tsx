@@ -6,7 +6,7 @@ import { SearchBarButton } from "@/components/search-bar";
 import { EventGrid } from "@/components/event-grid";
 import { DietScheduleCardNew } from "@/components/event-specific-summary-cards/diet-schedule-card-new";
 import { CourseList } from "@/components/course-list";
-import { FloatingActionButton } from "@/components/floating-action-button";
+import { FloatingActionButton } from "@/components/fabs/floating-action-button";
 import { events, courses } from "@/constants/navigation";
 import type { DataItem, FeedingTimeOption } from "@/utils/types";
 
