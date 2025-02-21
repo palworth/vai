@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/app/contexts/AuthContext"; // Global auth context
 import { SearchBarButton } from "@/components/search-bar";
 import DogSelector, { Dog } from "@/components/DogSelector";
-import VetStats from "@/components/VetStats";
-import HealthStats from "@/components/HealthStats";
+import VetStats from "@/components/event-stats-cards/VetStats";
+import HealthStats from "@/components/event-stats-cards/HealthStats";
 import { FloatingActionButtonVet } from "@/components/floating-action-button-vet";
 
 // Import the events array and the new LandingEventGrid for the bottom cards.

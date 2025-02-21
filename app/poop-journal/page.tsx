@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import DogSelector, { Dog } from "@/components/DogSelector";
-import PoopJournalStats from "@/components/PoopJournalStats";
+import PoopJournalStats from "@/components/event-stats-cards/PoopJournalStats";
 import { FloatingActionButtonPoop } from "@/components/floating-action-button-poop";
-import { PoopJournalSummaryCard, PoopJournalEvent } from "@/components/poop-journal-summary-card";
+import { PoopJournalSummaryCard, PoopJournalEvent } from "@/components/event-specific-summary-cards/poop-journal-summary-card";
 // New imports for Health and Vet Hub cards.
 import { events } from "@/constants/navigation";
 // Use the new LandingEventGrid component
@@ -64,12 +64,13 @@ export default function PoopJournalPage() {
 
       {selectedDog ? (
         <section className="mb-8">
+          <PoopJournalStats events={selectedDogEvents} />
           {hasMultipleDogs && (
             <h2 className="text-2xl font-semibold mb-2">
               All {selectedDog.name} Poop Journal Entries
             </h2>
           )}
-          <PoopJournalStats events={selectedDogEvents} />
+          
 
           {loading ? (
             <p>Loading dog events...</p>

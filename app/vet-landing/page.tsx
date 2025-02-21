@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { SearchBarButton } from "@/components/search-bar";
 import DogSelector, { Dog } from "@/components/DogSelector";
-import VetStats from "@/components/VetStats";
+import VetStats from "@/components/event-stats-cards/VetStats";
 import VetDocuments from "@/components/vet-documents";
 import { FloatingActionButtonVet } from "@/components/floating-action-button-vet";
 import { useAuth } from "@/app/contexts/AuthContext";

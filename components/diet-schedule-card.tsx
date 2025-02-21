@@ -21,12 +21,16 @@ interface DietScheduleCardProps {
   };
 }
 
-function formatFeedingTimes(times: ("morning" | "evening" | "all day")[]) {
+function formatFeedingTimes(
+  times: ("morning" | "evening" | "all day")[] | undefined
+) {
+  if (!times || times.length === 0) return "N/A";
   if (times.includes("all day")) {
     return "All Day";
   }
   return times.map((t) => t.charAt(0).toUpperCase() + t.slice(1)).join(" and ");
 }
+
 
 export function GuidedProgramCard({ data }: DietScheduleCardProps) {
   const router = useRouter();

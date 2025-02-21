@@ -19,7 +19,7 @@ function formatTimestamp(timestamp: any): string {
  *   - Required: userId, dogId, quantity
  *   - Optional: eventDate, endDate, feedingTimes, brandName, foodType
  * 
- * Dog snapshot data (dogName, dogBreed, dogAge, sterilizationStatus) are fetched
+ * Dog snapshot data (dogName, dogBreed, dogAge, sterilizationStatus, imageUrl) are fetched
  * from the dog document referenced by dogId.
  */
 export const createDietScheduleEvent = functions.https.onRequest({ cors: true }, async (req, res) => {
@@ -75,7 +75,8 @@ export const createDietScheduleEvent = functions.https.onRequest({ cors: true },
         feedingTimes: feedingTimes || [],  // default to empty array if not provided
         brandName: brandName || "",          // default to empty string
         foodType: foodType || "",            // default to empty string
-        quantity: quantity                   // quantity is required
+        quantity: quantity,                  // quantity is required
+        dogImageUrl: dogData?.imageUrl || null,  // new property from dog document
       }
     };
 
