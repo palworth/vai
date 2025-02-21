@@ -3,18 +3,17 @@
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import { motion } from "framer-motion";
-import { ActionMenu } from "./action-menu";
-import { vetEvents } from "@/constants/vet-events";
+import { ActionMenu } from "../action-menu";
+import { dietEvents } from "@/constants/diet-events";
 
-interface FloatingActionButtonVetProps {
+interface FloatingActionButtonDietProps {
   dogId?: string;
   onRefresh?: () => void;
 }
 
-export function FloatingActionButtonVet({ dogId, onRefresh }: FloatingActionButtonVetProps) {
+export function FloatingActionButtonDiet({ dogId, onRefresh }: FloatingActionButtonDietProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Custom success handler: collapse menu and call onRefresh if provided.
   const handleSuccess = () => {
     setIsOpen(false);
     if (onRefresh) {
@@ -38,9 +37,8 @@ export function FloatingActionButtonVet({ dogId, onRefresh }: FloatingActionButt
       <ActionMenu
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        events={vetEvents}
+        events={dietEvents}
         dogId={dogId}
-        // Pass the custom success handler to your form inside ActionMenu
         onRefresh={handleSuccess}
       />
     </>

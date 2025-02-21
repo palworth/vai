@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Plus, X } from "lucide-react"
 import { motion } from "framer-motion"
-import { ActionMenu } from "./action-menu"
+import { ActionMenu } from "../action-menu"
 import { events } from "@/constants/navigation"
 
 export function FloatingActionButton() {
