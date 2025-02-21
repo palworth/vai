@@ -8,9 +8,9 @@ import { vertexAI } from '@genkit-ai/vertexai';
 import { defineSecret } from 'firebase-functions/params';
 
 // Import your new API Cloud Functions:
-import { getHealthEventsByDog, createHealthEvent, getHealthEventById, getAllHealthEventsByUser } from './api/health-events/route';
+import { getHealthEventsByDog, getHealthEventById, getAllHealthEventsByUser } from './api/health-events/route';
 
-import { createHealthEventNew } from './api/events/createHealthEvent'
+import { createHealthEvent } from './api/events/createHealthEvent'
 import { getEventsByDog } from './api/events/getEventsByDog'
 import { getEventById } from './api/events/getEventById'
 import { createWellnessEvent } from './api/events/createWellnessEvent'
@@ -22,7 +22,8 @@ import { createPoopJournalEvent } from './api/events/createPoopJournalEvent'
 import { createVetAppointmentEvent } from './api/events/createVetAppointmentEvent'
 import { createVaccinationAppointmentEvent } from './api/events/createVaccinationAppointmentEvent'
 import { createWeightChangeEvent } from './api/events/createWeightChangeEvent'
-import { createDietExceptionEvent } from './api/events/createDietExceptionEvent'
+import { createDietExceptionEvent } from './api/events/createDietExceptionEvent' 
+import { getAllEventsForUser } from './api/events/getAllEventsForUser' 
 
 //API key in google secret manager 
 const apiKey = defineSecret("GOOGLE_GENAI_API_KEY");
@@ -94,6 +95,6 @@ export const generateDogResponseFunction = onCallGenkit(
 );
 
 export { getHealthEventsByDog, createHealthEvent, getHealthEventById, getAllHealthEventsByUser, 
-          getEventsByDog, createHealthEventNew, getEventById, createBehaviorEvent, createExerciseEvent, 
+          getEventsByDog, getEventById, createBehaviorEvent, createExerciseEvent, 
           createWellnessEvent, createDietScheduleEvent, createPoopJournalEvent, createVetAppointmentEvent,
-          createVaccinationAppointmentEvent, createWeightChangeEvent, createDietExceptionEvent};
+          createVaccinationAppointmentEvent, createWeightChangeEvent, createDietExceptionEvent, getAllEventsForUser};
