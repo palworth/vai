@@ -5,7 +5,7 @@ import { SearchBarButton } from "@/components/search-bar";
 import DogSelector, { Dog } from "@/components/DogSelector";
 import VetStats from "@/components/event-stats-cards/VetStats";
 import VetDocuments from "@/components/vet-documents";
-import { FloatingActionButtonVet } from "@/components/floating-action-button-vet";
+import { FloatingActionButtonVet } from "@/components/fabs/floating-action-button-vet";
 import { useAuth } from "@/app/contexts/AuthContext";
 
 // Import the events array and the new LandingEventGrid component.

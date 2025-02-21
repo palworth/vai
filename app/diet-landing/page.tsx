@@ -3,11 +3,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import DogSelector, { Dog } from "@/components/DogSelector";
-import { FloatingActionButtonPoop } from "@/components/floating-action-button-poop";
+import { FloatingActionButtonPoop } from "@/components/fabs/floating-action-button-poop";
 import { DietExceptionSummaryCard, DietExceptionEvent } from "@/components/event-specific-summary-cards/diet-exception-summary-card";
 import { DietScheduleCardNew } from "@/components/event-specific-summary-cards/diet-schedule-card-new";
 import { events } from "@/constants/navigation";
 import { LandingEventGrid } from "@/components/LandingEventGrid";
+import { FloatingActionButtonDiet } from "@/components/fabs/floating-action-button-diet";
 
 interface DietScheduleData {
   id: string;
@@ -162,7 +163,7 @@ export default function DietLandingPage() {
         <LandingEventGrid events={bottomEvents} />
       </div>
 
-      <FloatingActionButtonPoop dogId={selectedDog?.id} onRefresh={refreshEvents} />
+      <FloatingActionButtonDiet dogId={selectedDog?.id} onRefresh={refreshEvents} />
     </div>
   );
 }

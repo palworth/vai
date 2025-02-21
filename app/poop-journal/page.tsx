@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import DogSelector, { Dog } from "@/components/DogSelector";
 import PoopJournalStats from "@/components/event-stats-cards/PoopJournalStats";
-import { FloatingActionButtonPoop } from "@/components/floating-action-button-poop";
+import { FloatingActionButtonPoop } from "@/components/fabs/floating-action-button-poop";
 import { PoopJournalSummaryCard, PoopJournalEvent } from "@/components/event-specific-summary-cards/poop-journal-summary-card";
 // New imports for Health and Vet Hub cards.
 import { events } from "@/constants/navigation";
