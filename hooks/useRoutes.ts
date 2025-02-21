@@ -31,6 +31,8 @@ export function useRoutes() {
         return "/poop-journal";
       case "vet-landing":
         return "/vet-landing";
+      case "diet-landing":
+        return "diet-landing";
       // default route
       default:
         return "/";

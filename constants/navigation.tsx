@@ -42,7 +42,7 @@ export const events: EventCard[] = [
   {
     title: "Diet",
     backgroundColor: EVENT_COLORS.diet,
-    href: "diet",
+    href: "diet-landing",
   },
   {
     title: "Diet Schedule",
