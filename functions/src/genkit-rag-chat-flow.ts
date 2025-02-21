@@ -73,55 +73,128 @@ export async function generateDogResponse({ dogId, testQuestion }: { dogId: stri
     };
     console.log("Simplified Dog Data:", simplifiedDogData);
 
-    // Fetch raw events from Firestore.
-    const dietRaw = (await db.collection("dietEvents").where("dogId", "==", dogRef).get()).docs.map(doc => doc.data());
-    const behaviorRaw = (await db.collection("behaviorEvents").where("dogId", "==", dogRef).get()).docs.map(doc => doc.data());
-    const exerciseRaw = (await db.collection("exerciseEvents").where("dogId", "==", dogRef).get()).docs.map(doc => doc.data());
-    const healthRaw = (await db.collection("healthEvents").where("dogId", "==", dogRef).get()).docs.map(doc => doc.data());
-    const wellnessRaw = (await db.collection("wellnessEvents").where("dogId", "==", dogRef).get()).docs.map(doc => doc.data());
+    // Fetch raw events from Firestore from the root-level "events" collection.
+    const dietExceptionRaw = (await db.collection("events")
+      .where("dogId", "==", dogRef)
+      .where("type", "==", "dietException")
+      .get()).docs.map(doc => doc.data());
+    const behaviorRaw = (await db.collection("events")
+      .where("dogId", "==", dogRef)
+      .where("type", "==", "behavior")
+      .get()).docs.map(doc => doc.data());
+    const exerciseRaw = (await db.collection("events")
+      .where("dogId", "==", dogRef)
+      .where("type", "==", "exercise")
+      .get()).docs.map(doc => doc.data());
+    const healthRaw = (await db.collection("events")
+      .where("dogId", "==", dogRef)
+      .where("type", "==", "health")
+      .get()).docs.map(doc => doc.data());
+    const wellnessRaw = (await db.collection("events")
+      .where("dogId", "==", dogRef)
+      .where("type", "==", "wellness")
+      .get()).docs.map(doc => doc.data());
+
+    // Additional queries for new event types.
+    const dietScheduleRaw = (await db.collection("events")
+      .where("dogId", "==", dogRef)
+      .where("type", "==", "dietSchedule")
+      .get()).docs.map(doc => doc.data());
+    const poopJournalRaw = (await db.collection("events")
+      .where("dogId", "==", dogRef)
+      .where("type", "==", "poopJournal")
+      .get()).docs.map(doc => doc.data());
+    const vetAppointmentRaw = (await db.collection("events")
+      .where("dogId", "==", dogRef)
+      .where("type", "==", "vetAppointment")
+      .get()).docs.map(doc => doc.data());
+    const vaccinationAppointmentRaw = (await db.collection("events")
+      .where("dogId", "==", dogRef)
+      .where("type", "==", "vaccinationAppointment")
+      .get()).docs.map(doc => doc.data());
+    const weightChangeRaw = (await db.collection("events")
+      .where("dogId", "==", dogRef)
+      .where("type", "==", "weightChange")
+      .get()).docs.map(doc => doc.data());
 
     // Clean up events arrays.
-    const dietEvents = dietRaw.map(e => ({
-      foodType: e.foodType,
-      brandName: e.brandName,
-      eventDate: e.eventDate
+    const dietEvents = dietExceptionRaw.map(e => ({
+      foodType: e.data?.foodType,
+      notes: e.data?.notes,
+      amount: e.data?.amount,
+      eventDate: e.eventDate,
     }));
     const behaviorEvents = behaviorRaw.map(e => ({
-      behaviorType: e.behaviorType,
-      severity: e.severity,
-      notes: e.notes,
-      eventDate: e.eventDate
+      behaviorType: e.data?.behaviorType,
+      severity: e.data?.severity,
+      notes: e.data?.notes,
+      eventDate: e.eventDate,
     }));
     const exerciseEvents = exerciseRaw.map(e => ({
+      activityType: e.data?.activityType,
+      duration: e.data?.duration,
+      distance: e.data?.distance,
+      source: e.data?.source,
       eventDate: e.eventDate,
-      activityType: e.activityType,
-      duration: e.duration,
-      distance: e.distance,
-      source: e.source
     }));
     const healthEvents = healthRaw.map(e => ({
-      eventType: e.eventType,
-      severity: e.severity,
-      notes: e.notes,
-      eventDate: e.eventDate
+      eventType: e.data?.eventType,
+      severity: e.data?.severity,
+      notes: e.data?.notes,
+      eventDate: e.eventDate,
     }));
     const wellnessEvents = wellnessRaw.map(e => ({
-      type: e.type,
-      mentalState: e.mentalState,
-      severity: e.severity,
-      notes: e.notes,
-      eventDate: e.eventDate
+      mentalState: e.data?.mentalState,
+      severity: e.data?.severity,
+      notes: e.data?.notes,
+      eventDate: e.eventDate,
     }));
-
+    const dietScheduleEvents = dietScheduleRaw.map(e => ({
+      endDate: e.data?.endDate,
+      feedingTimes: e.data?.feedingTimes,
+      brandName: e.data?.brandName,
+      foodType: e.data?.foodType,
+      quantity: e.data?.quantity,
+      dogImageUrl: e.data?.dogImageUrl,
+      eventDate: e.eventDate,
+    }));
+    const poopJournalEvents = poopJournalRaw.map(e => ({
+      notes: e.data?.notes,
+      solidScale: e.data?.solidScale,
+      eventDate: e.eventDate,
+    }));
+    const vetAppointmentEvents = vetAppointmentRaw.map(e => ({
+      appointmentType: e.data?.appointmentType,
+      vetName: e.data?.vetName,
+      notes: e.data?.notes,
+      vetDocuments: e.data?.vetDocuments,
+      eventDate: e.eventDate,
+    }));
+    const vaccinationAppointmentEvents = vaccinationAppointmentRaw.map(e => ({
+      vaccinationsType: e.data?.vaccinationsType,
+      vetName: e.data?.vetName,
+      notes: e.data?.notes,
+      vetDocuments: e.data?.vetDocuments,
+      eventDate: e.eventDate,
+    }));
+    const weightChangeEvents = weightChangeRaw.map(e => ({
+      weight: e.data?.weight,
+      eventDate: e.eventDate,
+    }));
 
     // Build the input for the prompt.
     const promptInput = {
       simplifiedDogData,
       dietEvents,
+      dietScheduleEvents,
       behaviorEvents,
       exerciseEvents,
       healthEvents,
       wellnessEvents,
+      poopJournalEvents,
+      vetAppointmentEvents,
+      vaccinationAppointmentEvents,
+      weightChangeEvents,
       testQuestion, // Now we include testQuestion from the parameters.
     };
 

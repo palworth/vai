@@ -1,11 +1,12 @@
-"use client"
+"use client";
 
 import { useState, useEffect, useCallback, FormEvent } from "react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { collection, query, where, getDocs, doc } from "firebase/firestore";
 import { db, functions } from "@/lib/firebase";
 import { ChatInterface, Message, Dog } from "@/components/ChatInterface";
-import { httpsCallable, connectFunctionsEmulator } from "firebase/functions";
+import { httpsCallable } from "firebase/functions";
+// import { connectFunctionsEmulator } from "firebase/functions";
 
 // If in development, connect to the Functions emulator:
 // if (process.env.NODE_ENV === "development") {
@@ -20,7 +21,6 @@ export default function RagChatPage() {
   const [selectedDogId, setSelectedDogId] = useState<string | null>(null);
   const [isGeneralChat, setIsGeneralChat] = useState(false);
   const { user } = useAuth();
-
 
   // Fetch user's dogs for the dropdown.
   const fetchUserDogs = useCallback(async () => {
@@ -58,21 +58,20 @@ export default function RagChatPage() {
     setIsLoading(true);
 
     try {
-      // Create a callable reference to the Cloud Function directly.
       const generateDogResponseCallable = httpsCallable(functions, "generateDogResponseFunction");
-
       const result = await generateDogResponseCallable({
         dogId: isGeneralChat ? null : selectedDogId,
         testQuestion: currentInput,
       });
       
-      // Log the response for debugging.
-      console.log("Result from Cloud Function:", result.data);
-      
       let content: string;
       if (typeof result.data === "string") {
         content = result.data;
-      } else if (typeof result.data === "object" && result.data !== null && "result" in result.data) {
+      } else if (
+        typeof result.data === "object" &&
+        result.data !== null &&
+        "result" in result.data
+      ) {
         content = (result.data as { result: string }).result;
       } else {
         content = "No valid response received";
@@ -92,8 +91,9 @@ export default function RagChatPage() {
     }
   };
 
-  const onInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
+  // Updated onInputChange to accept a string value.
+  const onInputChange = (value: string) => {
+    setInput(value);
   };
 
   const onSelectDog = (dogId: string) => {
@@ -112,9 +112,9 @@ export default function RagChatPage() {
     });
   };
 
+  // Make the container fill the screen, removing any header.
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-4">RAG Chat</h1>
+    <div className="w-screen h-screen">
       <ChatInterface
         messages={messages}
         input={input}

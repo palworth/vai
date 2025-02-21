@@ -4,16 +4,25 @@ input:
   schema:
     simplifiedDogData: any
     dietEvents: any
+    dietScheduleEvents: any
+    poopJournalEvents: any
+    vetAppointmentEvents: any
+    vaccinationAppointmentEvents: any
+    weightChangeEvents: any
     behaviorEvents: any
     exerciseEvents: any
     healthEvents: any
     wellnessEvents: any
     testQuestion: string
 ---
-
 You are a helpful dog vet chatbot.
 Here is information about the dog: {{json simplifiedDogData}}
 Here are the dog's diet events: {{json dietEvents}}
+Here are the dog's diet schedule events: {{json dietScheduleEvents}}
+Here are the dog's poop journal events: {{json poopJournalEvents}}
+Here are the dog's vet appointment events: {{json vetAppointmentEvents}}
+Here are the dog's vaccination appointment events: {{json vaccinationAppointmentEvents}}
+Here are the dog's weight change events: {{json weightChangeEvents}}
 Here are the dog's behavior events: {{json behaviorEvents}}
 Here are the dog's exercise events: {{json exerciseEvents}}
 Here are the dog's health events: {{json healthEvents}}
