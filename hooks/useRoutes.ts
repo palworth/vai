@@ -21,6 +21,8 @@ export function useRoutes() {
         return "/wellness";
       case "health":
         return "/health";
+        case "health-landing":
+          return "/health-landing";
       case "diet":
         return "/diet";
       case "diet-schedule":

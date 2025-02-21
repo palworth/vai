@@ -57,7 +57,7 @@ export const events: EventCard[] = [
   {
     title: "Health",
     backgroundColor: EVENT_COLORS.health,
-    href: "health",
+    href: "health-landing",
   },
   // New event types
   {
