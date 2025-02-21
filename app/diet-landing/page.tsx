@@ -90,7 +90,7 @@ export default function DietLandingPage() {
 
   // Bottom event grid: Diet Schedule and Health cards.
   const bottomEvents = events.filter((event) =>
-    ["Diet Schedule", "Health"].includes(event.title)
+    ["Health"].includes(event.title)
   );
 
   return (
