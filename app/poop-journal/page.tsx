@@ -6,6 +6,10 @@ import DogSelector, { Dog } from "@/components/DogSelector";
 import PoopJournalStats from "@/components/PoopJournalStats";
 import { FloatingActionButtonPoop } from "@/components/floating-action-button-poop";
 import { PoopJournalSummaryCard, PoopJournalEvent } from "@/components/poop-journal-summary-card";
+// New imports for Health and Vet Hub cards.
+import { events } from "@/constants/navigation";
+// Use the new LandingEventGrid component
+import { LandingEventGrid } from "@/components/LandingEventGrid";
 
 export default function PoopJournalPage() {
   const { user } = useAuth();
@@ -47,6 +51,11 @@ export default function PoopJournalPage() {
   const refreshEvents = () => {
     setRefreshCount((prev) => prev + 1);
   };
+
+  // Filter for the bottom event grid: Health and Vet Hub cards.
+  const bottomEvents = events.filter((event) =>
+    ["Health", "Vet Hub"].includes(event.title)
+  );
 
   return (
     <div className="p-4">
@@ -101,6 +110,11 @@ export default function PoopJournalPage() {
           </div>
         </div>
       )}
+
+      {/* Bottom event grid for Health and Vet Hub using LandingEventGrid (defaults to 75% scale) */}
+      <div className="mt-8 flex justify-center">
+        <LandingEventGrid events={bottomEvents} />
+      </div>
 
       <FloatingActionButtonPoop dogId={selectedDog?.id} onRefresh={refreshEvents} />
     </div>

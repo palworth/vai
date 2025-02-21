@@ -8,6 +8,10 @@ import VetDocuments from "@/components/vet-documents";
 import { FloatingActionButtonVet } from "@/components/floating-action-button-vet";
 import { useAuth } from "@/app/contexts/AuthContext";
 
+// Import the events array and the new LandingEventGrid component.
+import { events } from "@/constants/navigation";
+import { LandingEventGrid } from "@/components/LandingEventGrid";
+
 interface VetEvent {
   id: string;
   eventDate: string; // ISO date string, e.g. "2025-02-19T03:06:31.000Z"
@@ -29,10 +33,6 @@ export default function VetLandingPage() {
   const [vetEvents, setVetEvents] = useState<VetEvent[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  /**
-   * Fetch all vet events for the current user (across all dogs).
-   * Replace the URL below with your actual endpoint.
-   */
   const fetchAllVetEvents = useCallback(async () => {
     if (!user) return;
     try {
@@ -45,12 +45,12 @@ export default function VetLandingPage() {
       }
       const data = await res.json();
       // Filter for vet-related events.
-      const events = data
+      const eventsData = data
         .filter((event: any) =>
           event.type === "vetAppointment" || event.type === "vaccinationAppointment"
         )
         .map((event: any) => ({ ...event, data: event.data || {} }));
-      setVetEvents(events);
+      setVetEvents(eventsData);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching all vet events:", error);
@@ -58,9 +58,6 @@ export default function VetLandingPage() {
     }
   }, [user]);
 
-  /**
-   * Fetch vet events for a specific dog.
-   */
   const fetchVetEventsByDog = useCallback(async (dogId: string) => {
     try {
       setLoading(true);
@@ -72,12 +69,12 @@ export default function VetLandingPage() {
       }
       const data = await res.json();
       // Filter for vet-related events.
-      const events = data
+      const eventsData = data
         .filter((event: any) =>
           event.type === "vetAppointment" || event.type === "vaccinationAppointment"
         )
         .map((event: any) => ({ ...event, data: event.data || {} }));
-      setVetEvents(events);
+      setVetEvents(eventsData);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching vet events by dog:", error);
@@ -94,7 +91,6 @@ export default function VetLandingPage() {
     }
   }, [selectedDog, fetchVetEventsByDog, fetchAllVetEvents, user]);
 
-  // Refresh callback to re-fetch events without reloading the page.
   const refreshEvents = useCallback(() => {
     if (!user) return;
     if (selectedDog) {
@@ -104,29 +100,23 @@ export default function VetLandingPage() {
     }
   }, [selectedDog, fetchVetEventsByDog, fetchAllVetEvents, user]);
 
+  // Filter for the bottom event grid: Weight Change, Vet Hub, and Poop Journal.
+  const bottomEvents = events.filter((event) =>
+    ["Weight Change", "Vet Hub", "Poop Journal"].includes(event.title)
+  );
+
   return (
     <div className="p-4">
-      {/* Top Search Bar */}
       <SearchBarButton />
-
-      {/* Heading anchored below the search bar */}
       <h1 className="text-3xl font-bold mt-16 mb-4">Veterinarian Hub</h1>
-
-      {/* Dog Selector */}
       <DogSelector onSelect={setSelectedDog} />
-
-      {/* Vet Stats (receives selectedDog to conditionally display dog names) */}
       <VetStats events={vetEvents} selectedDog={selectedDog} />
-
-      {/* Vet Documents */}
       <VetDocuments events={vetEvents} />
-
       {loading && <p>Loading vet events...</p>}
-
-      {/* Floating Action Button specific to vet landing.
-          Pass the selected dog's id (if any) and the refresh callback so that upon success,
-          the events query is re-run.
-      */}
+      {/* Render the bottom event grid using LandingEventGrid (defaults to 75% scale) */}
+      <div className="mt-8 flex justify-center">
+        <LandingEventGrid events={bottomEvents} />
+      </div>
       <FloatingActionButtonVet dogId={selectedDog?.id} onRefresh={refreshEvents} />
     </div>
   );
