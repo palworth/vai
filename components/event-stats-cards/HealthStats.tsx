@@ -7,7 +7,7 @@ interface HealthEvent {
   eventDate: string; // ISO date string
   type: string; // should be "health"
   data: {
-    eventType?: string; // now using eventType as in your result
+    eventType?: string;
     notes?: string;
     severity?: number;
   };
@@ -63,23 +63,38 @@ export default function HealthStats({ dogId }: HealthStatsProps) {
   }
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow">
-      <h2 className="text-xl font-bold mb-2">Last Health Event</h2>
+    <div className="border p-4 mb-4 rounded shadow bg-gray-50">
+      <h3 className="text-xl font-semibold mb-2">Last Health Event</h3>
       {lastHealthEvent ? (
-        <div>
-          <p>
-            <strong>Date:</strong>{" "}
-            {new Date(lastHealthEvent.eventDate).toLocaleDateString()}
-          </p>
-          <p>
-            <strong>Event Type:</strong> {lastHealthEvent.data.eventType}
-          </p>
-          <p>
-            <strong>Notes:</strong> {lastHealthEvent.data.notes}
-          </p>
-          <p>
-            <strong>Severity:</strong> {lastHealthEvent.data.severity}
-          </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <p>
+              <strong>Event Type:</strong> {lastHealthEvent.data.eventType}
+            </p>
+            <p>
+              <strong>Notes:</strong> {lastHealthEvent.data.notes}
+            </p>
+            <p>
+              <strong>Severity:</strong> {lastHealthEvent.data.severity}
+            </p>
+          </div>
+          <div className="text-right">
+            {(() => {
+              const eventDateObj = new Date(lastHealthEvent.eventDate);
+              const datePart = eventDateObj.toLocaleDateString("en-US", {
+                dateStyle: "medium",
+              });
+              const timePart = eventDateObj.toLocaleTimeString("en-US", {
+                timeStyle: "short",
+              });
+              return (
+                <>
+                  <p className="font-semibold">{datePart}</p>
+                  <p className="text-sm text-gray-500">{timePart}</p>
+                </>
+              );
+            })()}
+          </div>
         </div>
       ) : (
         <p>No health events found.</p>
