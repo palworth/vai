@@ -44,7 +44,7 @@ export default function DietLandingPage() {
       // Assume the API returns an array of diet schedule events; we pick the first (most recent).
       if (json && json.length > 0) {
         setDietScheduleData(json[0]);
-        console.log(json[0])
+        console.log(json[0]);
       } else {
         setDietScheduleData(null);
       }
@@ -109,9 +109,11 @@ export default function DietLandingPage() {
             <p>No diet schedule found for this dog.</p>
           )}
 
-          {hasMultipleDogs && (
+          {selectedDog && (
             <h2 className="text-2xl font-semibold mb-2">
-              All {selectedDog.name} Diet Exception Entries
+              {hasMultipleDogs
+                ? `All ${selectedDog.name} Diet Exception Entries`
+                : "Diet Exception Entries"}
             </h2>
           )}
 
