@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import type { EventCard } from "@/types";
 import { Modal } from "./ui/modal";
 import { AddEventForm } from "@/components/add-event-form";
-import { PoopJournalForm } from "@/components/PoopJournalForm";
 import { VetEventsForm } from "@/components/VetEventsForm";
 
 interface ActionMenuProps {
@@ -17,12 +16,13 @@ interface ActionMenuProps {
   onRefresh?: () => void; // New prop to trigger refresh
 }
 
-// Updated: include "Health" as a vet-related event type so it uses VetEventsForm
+// Updated: include "Health" and "Poop Journal" as a vet-related event type so they use VetEventsForm
 const vetEventTypes = new Set([
   "Vet Appointment",
   "Vaccination Appointment",
   "Weight Change",
-  "Health"
+  "Health",
+  "Poop Journal"
 ]);
 
 export function ActionMenu({ isOpen, onClose, events, dogId, onRefresh }: ActionMenuProps) {
@@ -98,12 +98,7 @@ export function ActionMenu({ isOpen, onClose, events, dogId, onRefresh }: Action
       >
         {selectedEvent && vetEventTypes.has(selectedEvent.title) ? (
           <VetEventsForm
-            eventType={selectedEvent.title as "Vet Appointment" | "Vaccination Appointment" | "Weight Change" | "Health"}
-            dogId={dogId!}
-            onSuccess={handleSuccess}
-          />
-        ) : selectedEvent?.title === "Poop Journal" ? (
-          <PoopJournalForm
+            eventType={selectedEvent.title as "Vet Appointment" | "Vaccination Appointment" | "Weight Change" | "Health" | "Poop Journal"}
             dogId={dogId!}
             onSuccess={handleSuccess}
           />
