@@ -102,7 +102,7 @@ export default function VetLandingPage() {
 
   // Filter for the bottom event grid: Weight Change, Vet Hub, and Poop Journal.
   const bottomEvents = events.filter((event) =>
-    ["Weight Change", "Vet Hub", "Poop Journal"].includes(event.title)
+    ["Weight Change", "Health", "Poop Journal"].includes(event.title)
   );
 
   return (
