@@ -42,7 +42,7 @@ export const events: EventCard[] = [
   {
     title: "Diet",
     backgroundColor: EVENT_COLORS.diet,
-    href: "diet",
+    href: "diet-landing",
   },
   {
     title: "Diet Schedule",
@@ -57,7 +57,7 @@ export const events: EventCard[] = [
   {
     title: "Health",
     backgroundColor: EVENT_COLORS.health,
-    href: "health",
+    href: "health-landing",
   },
   // New event types
   {
@@ -70,16 +70,23 @@ export const events: EventCard[] = [
     backgroundColor: EVENT_COLORS.poopJournal,
     href: "poop-journal",
   },
+
   {
-    title: "Vet Appointment",
-    backgroundColor: EVENT_COLORS.vetAppointment,
-    href: "vet-appointment",
+    title: "Vet Hub",
+    backgroundColor: EVENT_COLORS.vetLanding,
+    href: "vet-landing",
   },
-  {
-    title: "Vaccination Appointment",
-    backgroundColor: EVENT_COLORS.vaccinationAppointment,
-    href: "vaccination-appointment",
-  },
+
+  // {
+  //   title: "Vet Appointment",
+  //   backgroundColor: EVENT_COLORS.vetAppointment,
+  //   href: "vet-appointment",
+  // },
+  // {
+  //   title: "Vaccination Appointment",
+  //   backgroundColor: EVENT_COLORS.vaccinationAppointment,
+  //   href: "vaccination-appointment",
+  // },
   {
     title: "Weight Change",
     backgroundColor: EVENT_COLORS.weightChange,

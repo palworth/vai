@@ -1,19 +1,26 @@
-// File: /components/floating-action-button-poop.tsx
 "use client";
 
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import { motion } from "framer-motion";
-import { ActionMenu } from "./action-menu";
-import { poopEvents } from "@/constants/poop-events";
+import { ActionMenu } from "../action-menu";
+import { vetEvents } from "@/constants/vet-events";
 
-interface FloatingActionButtonPoopProps {
+interface FloatingActionButtonVetProps {
   dogId?: string;
-  onRefresh?: () => void; // New callback to refresh events
+  onRefresh?: () => void;
 }
 
-export function FloatingActionButtonPoop({ dogId, onRefresh }: FloatingActionButtonPoopProps) {
+export function FloatingActionButtonVet({ dogId, onRefresh }: FloatingActionButtonVetProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Custom success handler: collapse menu and call onRefresh if provided.
+  const handleSuccess = () => {
+    setIsOpen(false);
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
 
   return (
     <>
@@ -28,7 +35,14 @@ export function FloatingActionButtonPoop({ dogId, onRefresh }: FloatingActionBut
         </motion.div>
       </motion.button>
 
-      <ActionMenu isOpen={isOpen} onClose={() => setIsOpen(false)} events={poopEvents} dogId={dogId} onRefresh={onRefresh} />
+      <ActionMenu
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        events={vetEvents}
+        dogId={dogId}
+        // Pass the custom success handler to your form inside ActionMenu
+        onRefresh={handleSuccess}
+      />
     </>
   );
 }

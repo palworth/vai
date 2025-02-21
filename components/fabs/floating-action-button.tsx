@@ -3,11 +3,16 @@
 import { useState } from "react"
 import { Plus, X } from "lucide-react"
 import { motion } from "framer-motion"
-import { ActionMenu } from "./action-menu"
+import { ActionMenu } from "../action-menu"
 import { events } from "@/constants/navigation"
 
 export function FloatingActionButton() {
   const [isOpen, setIsOpen] = useState(false)
+
+  // Custom success handler to collapse the menu immediately after save
+  const handleSuccess = () => {
+    setIsOpen(false)
+  }
 
   return (
     <>
@@ -22,8 +27,7 @@ export function FloatingActionButton() {
         </motion.div>
       </motion.button>
 
-      <ActionMenu isOpen={isOpen} onClose={() => setIsOpen(false)} events={events} />
+      <ActionMenu isOpen={isOpen} onClose={() => setIsOpen(false)} events={events} onRefresh={handleSuccess} />
     </>
   )
 }
-

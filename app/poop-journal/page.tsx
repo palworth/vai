@@ -3,9 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import DogSelector, { Dog } from "@/components/DogSelector";
-import PoopJournalStats from "@/components/PoopJournalStats";
-import { FloatingActionButtonPoop } from "@/components/floating-action-button-poop";
-import { PoopJournalSummaryCard, PoopJournalEvent } from "@/components/poop-journal-summary-card";
+import PoopJournalStats from "@/components/event-stats-cards/PoopJournalStats";
+import { FloatingActionButtonPoop } from "@/components/fabs/floating-action-button-poop";
+import { PoopJournalSummaryCard, PoopJournalEvent } from "@/components/event-specific-summary-cards/poop-journal-summary-card";
+// New imports for Health and Vet Hub cards.
+import { events } from "@/constants/navigation";
+// Use the new LandingEventGrid component
+import { LandingEventGrid } from "@/components/LandingEventGrid";
 
 export default function PoopJournalPage() {
   const { user } = useAuth();
@@ -48,6 +52,11 @@ export default function PoopJournalPage() {
     setRefreshCount((prev) => prev + 1);
   };
 
+  // Filter for the bottom event grid: Health and Vet Hub cards.
+  const bottomEvents = events.filter((event) =>
+    ["Health", "Vet Hub"].includes(event.title)
+  );
+
   return (
     <div className="p-4">
       <h1 className="text-3xl font-bold mb-4">Poop Journal</h1>
@@ -55,12 +64,13 @@ export default function PoopJournalPage() {
 
       {selectedDog ? (
         <section className="mb-8">
+          <PoopJournalStats events={selectedDogEvents} />
           {hasMultipleDogs && (
             <h2 className="text-2xl font-semibold mb-2">
               All {selectedDog.name} Poop Journal Entries
             </h2>
           )}
-          <PoopJournalStats events={selectedDogEvents} />
+          
 
           {loading ? (
             <p>Loading dog events...</p>
@@ -101,6 +111,11 @@ export default function PoopJournalPage() {
           </div>
         </div>
       )}
+
+      {/* Bottom event grid for Health and Vet Hub using LandingEventGrid (defaults to 75% scale) */}
+      <div className="mt-8 flex justify-center">
+        <LandingEventGrid events={bottomEvents} />
+      </div>
 
       <FloatingActionButtonPoop dogId={selectedDog?.id} onRefresh={refreshEvents} />
     </div>

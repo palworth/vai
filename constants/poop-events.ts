@@ -1,9 +1,9 @@
-// File: /constants/poop-events.ts
+import { EVENT_COLORS } from "@/constants/colors";
+
 export const poopEvents = [
-    {
-      title: "Poop Journal",
-      backgroundColor: "#8B4513",
-      href: "poop-journal",
-    },
-  ];
-  
+  {
+    title: "Poop Journal",
+    backgroundColor: EVENT_COLORS.poopJournal,
+    href: "poop-journal",
+  },
+];

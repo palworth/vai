@@ -22,7 +22,7 @@ function formatTimestamp(timestamp: any): string {
  * Dog snapshot data (dogName, dogBreed, dogAge, sterilizationStatus) are fetched
  * from the dog document referenced by dogId.
  */
-export const createHealthEventNew = functions.https.onRequest({ cors: true }, async (req, res) => {
+export const createHealthEvent = functions.https.onRequest({ cors: true }, async (req, res) => {
   try {
     const { userId, dogId, eventDate, eventType, severity, notes, imageUrls } = req.body;
 
