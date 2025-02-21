@@ -156,7 +156,10 @@ export function ChatInterface(props: ChatInterfaceProps) {
                 message.role === "user" ? "items-end" : "items-start"
               )}
             >
-              {/* Ternary: user => white background, assistant => off-gray */}
+              {/* Ternary for backgrounds:
+                  - user => white
+                  - assistant => off-gray
+               */}
               <div
                 className={cn(
                   "rounded-2xl p-4 whitespace-pre-wrap break-words max-w-full text-black",
@@ -184,9 +187,10 @@ export function ChatInterface(props: ChatInterfaceProps) {
       </div>
 
       {/* Input Form */}
+      {/* Offset from bottom by 60px for nav bar */}
       <div
         ref={formContainerRef}
-        className="sticky bottom-0 w-full border-t border-white/10 bg-background/5 backdrop-blur-sm z-10"
+        className="sticky bottom-[60px] w-full border-t border-white/10 bg-background/5 backdrop-blur-sm z-10"
       >
         <form
           onSubmit={onSubmit}
