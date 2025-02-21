@@ -5,6 +5,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { Loader2 } from "lucide-react";
 
 interface VetEventsFormProps {
   // If a dogId is passed, the form won't render any dog field/selector.
@@ -22,6 +23,9 @@ export function VetEventsForm({ dogId, eventType, onSuccess }: VetEventsFormProp
   const { user } = useAuth();
   const storage = getStorage();
 
+  // COOL DOWN HOOK: disable the Save button for 10 seconds after submission.
+  const [cooldownActive, setCooldownActive] = useState(false);
+
   // Local dog selection state (used only if dogId isn't passed).
   const [dogs, setDogs] = useState<any[]>([]);
   const [selectedDogId, setSelectedDogId] = useState<string>("");
@@ -29,7 +33,6 @@ export function VetEventsForm({ dogId, eventType, onSuccess }: VetEventsFormProp
   useEffect(() => {
     // If a dogId prop is passed, we skip fetching user dogs entirely.
     if (!user || dogId) return;
-
     fetch(`/api/dogs?userId=${user.uid}`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -37,7 +40,7 @@ export function VetEventsForm({ dogId, eventType, onSuccess }: VetEventsFormProp
       })
       .then((data) => {
         setDogs(data);
-        // If exactly one dog, select it automatically
+        // If exactly one dog, select it automatically.
         if (data.length === 1) {
           setSelectedDogId(data[0].id);
         }
@@ -47,11 +50,10 @@ export function VetEventsForm({ dogId, eventType, onSuccess }: VetEventsFormProp
       });
   }, [user, dogId]);
 
-  // The dog ID we'll actually use for submission.
-  // If dogId prop is provided, we always use that. Otherwise, we use the user's selection.
+  // The effective dog ID is taken from the dogId prop (if provided) or the locally selected dog.
   const effectiveDogId = dogId || selectedDogId;
 
-  // Form states for the rest of the event fields
+  // Form states for the rest of the event fields.
   const [startDate, setStartDate] = useState(new Date());
   const [notes, setNotes] = useState("");
   const [vetName, setVetName] = useState("");
@@ -65,11 +67,11 @@ export function VetEventsForm({ dogId, eventType, onSuccess }: VetEventsFormProp
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [documentUrls, setDocumentUrls] = useState<string[]>([]);
 
-  // Whether we allow time selection in the DatePicker
+  // Determine if the DatePicker should allow time selection.
   const isTimeSelectable =
     eventType === "Vet Appointment" || eventType === "Vaccination Appointment";
 
-  // Handle file uploads
+  // Handle file uploads.
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
@@ -93,15 +95,20 @@ export function VetEventsForm({ dogId, eventType, onSuccess }: VetEventsFormProp
     }
   };
 
-  // Form submission
+  // Form submission handler.
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
-
     if (!effectiveDogId) {
       alert("Please select a dog before creating an event.");
       return;
     }
+
+    // Start cooldown: disable the Save button for 10 seconds.
+    setCooldownActive(true);
+    setTimeout(() => {
+      setCooldownActive(false);
+    }, 10000);
 
     const payload: any = {
       eventDate: startDate.toISOString(),
@@ -125,7 +132,7 @@ export function VetEventsForm({ dogId, eventType, onSuccess }: VetEventsFormProp
       payload.notes = notes;
       payload.solidScale = solidScale;
     } else if (eventType === "Health") {
-      payload.eventType = healthEventType; // As required by your backend
+      payload.eventType = healthEventType; // As required by your backend.
       payload.notes = healthNotes;
       payload.severity = severity;
     }
@@ -160,7 +167,7 @@ export function VetEventsForm({ dogId, eventType, onSuccess }: VetEventsFormProp
 
   return (
     <form onSubmit={handleSubmit} className="p-4 space-y-8 bg-gray-100">
-      {/* Only render dog field if dogId prop is NOT provided */}
+      {/* Render dog selection only if no dogId prop is passed */}
       {!dogId && (
         <>
           {dogs.length === 0 ? (
@@ -217,7 +224,7 @@ export function VetEventsForm({ dogId, eventType, onSuccess }: VetEventsFormProp
         </div>
       </div>
 
-      {/* Vet or Vaccination fields */}
+      {/* Fields for Vet Appointment / Vaccination Appointment */}
       {(eventType === "Vet Appointment" || eventType === "Vaccination Appointment") && (
         <>
           <div className="space-y-4">
@@ -234,7 +241,9 @@ export function VetEventsForm({ dogId, eventType, onSuccess }: VetEventsFormProp
           </div>
           {eventType === "Vet Appointment" && (
             <div className="space-y-4">
-              <h3 className="text-gray-400 text-sm font-medium tracking-wider">APPOINTMENT TYPE</h3>
+              <h3 className="text-gray-400 text-sm font-medium tracking-wider">
+                APPOINTMENT TYPE
+              </h3>
               <div className="bg-white rounded-2xl p-4">
                 <input
                   type="text"
@@ -315,19 +324,20 @@ export function VetEventsForm({ dogId, eventType, onSuccess }: VetEventsFormProp
             </div>
           </div>
           <div className="space-y-4">
-            <h3 className="text-gray-400 text-sm font-medium tracking-wider">
-              SOLID SCALE (1-10)
-            </h3>
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">SOLID SCALE</h3>
             <div className="bg-white rounded-2xl p-4">
-              <input
-                type="number"
-                value={solidScale}
-                onChange={(e) => setSolidScale(Number(e.target.value))}
-                min={1}
-                max={10}
-                placeholder="Rate solid scale"
-                className="w-full p-4 text-gray-900 bg-transparent"
-              />
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={solidScale}
+                  onChange={(e) => setSolidScale(Number(e.target.value))}
+                  className="w-full"
+                  style={{ accentColor: "#8B4513" }}
+                />
+                <span className="text-gray-900 min-w-[1.5rem]">{solidScale}</span>
+              </div>
             </div>
           </div>
         </>
@@ -362,19 +372,20 @@ export function VetEventsForm({ dogId, eventType, onSuccess }: VetEventsFormProp
             </div>
           </div>
           <div className="space-y-4">
-            <h3 className="text-gray-400 text-sm font-medium tracking-wider">
-              SEVERITY (1-10)
-            </h3>
+            <h3 className="text-gray-400 text-sm font-medium tracking-wider">SEVERITY</h3>
             <div className="bg-white rounded-2xl p-4">
-              <input
-                type="number"
-                value={severity}
-                onChange={(e) => setSeverity(Number(e.target.value))}
-                min={1}
-                max={10}
-                placeholder="Rate severity"
-                className="w-full p-4 text-gray-900 bg-transparent"
-              />
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={severity}
+                  onChange={(e) => setSeverity(Number(e.target.value))}
+                  className="w-full"
+                  style={{ accentColor: "#DC143C" }}
+                />
+                <span className="text-gray-900 min-w-[1.5rem]">{severity}</span>
+              </div>
             </div>
           </div>
           <div className="space-y-4">
@@ -391,12 +402,22 @@ export function VetEventsForm({ dogId, eventType, onSuccess }: VetEventsFormProp
       {/* Submit Button */}
       <button
         type="submit"
-        disabled={!effectiveDogId} // Optional: disable if no dog is selected
-        className={`w-full py-4 rounded-full font-medium text-white ${
-          eventType === "Weight Change" ? "bg-orange-600" : "bg-blue-600"
+        disabled={!effectiveDogId || cooldownActive}
+        className={`w-full py-4 rounded-full font-medium text-white transition-colors ${
+          cooldownActive
+            ? eventType === "Weight Change"
+              ? "bg-orange-700 shadow-inner"
+              : "bg-blue-700 shadow-inner"
+            : eventType === "Weight Change"
+            ? "bg-orange-600"
+            : "bg-blue-600"
         }`}
       >
-        SAVE
+        {cooldownActive ? (
+          <Loader2 className="animate-spin w-6 h-6 mx-auto" />
+        ) : (
+          "SAVE"
+        )}
       </button>
     </form>
   );
